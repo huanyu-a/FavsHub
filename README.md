@@ -20,6 +20,7 @@
 ### 🔖 智能书签导航
 
 将浏览器书签管理提升到全新高度：
+
 ![](images/static/Pasted_image_20260409093550.png)
 ![](images/static/Pasted_image_20260409094508.png)
 
@@ -33,6 +34,7 @@
 - 📝 **选中文本搜索**：网页选中文字 → 悬浮球/侧边栏 → 直接搜索
 - 🤖 集成 20+ 搜索引擎（AI、通用搜索、社交媒体）
 - 智能搜索建议对比展示（书签 + 历史 + 提示词）
+
 ![](images/static/Pasted_image_20260409093550.png)
 ![](images/static/Pasted_image_20260409093502.png)
 
@@ -50,6 +52,7 @@
 - 拖拽排序：自由调整书签和文件夹顺序
 - 右键菜单：编辑、删除、复制、二维码、批量打开
 - 文件夹导航：树形结构 + 平滑滚动 + 默认首页设置
+
 ![](images/static/Pasted_image_20260409094554.png)
 
 📖 **[查看书签导航详细文档 →](README-BOOKMARKS.md)**
@@ -59,6 +62,7 @@
 ### 📝 PromptPro 提示词管理
 
 完整的 AI 提示词版本控制与分类系统：
+
 ![](images/static/Pasted_image_20260409093828.png)
 ![](images/static/Pasted_image_20260409094455.png)
 ![](images/static/Pasted_image_20260409094008.png)
@@ -69,6 +73,7 @@
 - 版本差异对比，清晰展示修改内容
 - 一键还原到任意版本，当前版本自动保留
 - 语义化版本号自动递增（1.0.0 → 1.0.1）
+
 ![](images/static/Pasted_image_20260409094027.png)
 ![](images/static/Pasted_image_20260409094049.png)
 ![](images/static/Pasted_image_20260409094156.png)
