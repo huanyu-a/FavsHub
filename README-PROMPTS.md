@@ -851,7 +851,7 @@ current_version 更新为 v1.0.0
 
 ### 📖 相关文档
 - [书签导航功能文档](README-BOOKMARKS.md)
-- [项目总览](../README.md)
+- [项目总览](README.md)
 
 ### 🐛 报告问题
 - 描述详细复现步骤
