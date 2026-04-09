@@ -1,10 +1,10 @@
 {
     "extName": {
-        "message": "新標籤頁",
+        "message": "書籤導航",
         "description": "擴展的名稱"
     },
     "extDescription": {
-        "message": "TabMark 是一個基於書籤的新標籤頁應用程式，幫助您高效地組織和訪問您的書籤。",
+        "message": "FavsHub 是一個基於書籤的新標籤頁應用程式，幫助您高效地組織和訪問您的書籤。",
         "description": "擴展的描述"
     },
     "welcomeMessage": {
@@ -380,7 +380,7 @@
         "description": "關於分頁"
     },
     "aboutTitle": {
-        "message": "關於 TabMark",
+        "message": "關於 FavsHub",
         "description": "關於頁面標題"
     },
     "contactUs": {
@@ -774,11 +774,11 @@
         "description": "Donate tab name in settings"
     },
     "donateTitle": {
-        "message": "支持 TabMark 開發",
+        "message": "支持 FavsHub 開發",
         "description": "Title for donation section"
     },
     "donateDescription": {
-        "message": "如果您覺得 TabMark 有用，請考慮支持它的持續開發。您的貢獻將幫助我們改進擴展並添加新功能。",
+        "message": "如果您覺得 FavsHub 有用，請考慮支持它的持續開發。您的貢獻將幫助我們改進擴展並添加新功能。",
         "description": "Description for donation section"
     },
     "wechatDonateTitle": {

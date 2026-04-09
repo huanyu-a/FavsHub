@@ -1,10 +1,10 @@
 {
     "extName": {
-        "message": "탭 마크",
+        "message": "북마크 네비게이션",
         "description": "확장 프로그램 이름"
     },
     "extDescription": {
-        "message": "TabMark는 북마크 기반의 새 탭 페이지 애플리케이션으로, 북마크를 효율적으로 정리하고 액세스하는 데 도움이 됩니다.",
+        "message": "FavsHub는 북마크 기반의 새 탭 페이지 애플리케이션으로, 북마크를 효율적으로 정리하고 액세스하는 데 도움이 됩니다.",
         "description": "확장 프로그램 설명"
     },
     "welcomeMessage": {
@@ -380,7 +380,7 @@
         "description": "정보 탭"
     },
     "aboutTitle": {
-        "message": "TabMark 정보",
+        "message": "FavsHub 정보",
         "description": "정보 페이지 제목"
     },
     "contactUs": {
@@ -722,11 +722,11 @@
         "description": "Donate tab name in settings"
     },
     "donateTitle": {
-        "message": "TabMark 개발 지원하기",
+        "message": "FavsHub 개발 지원하기",
         "description": "Title for donation section"
     },
     "donateDescription": {
-        "message": "TabMark가 유용하다고 생각하신다면, 지속적인 개발을 지원해 주세요. 여러분의 기여는 확장 프로그램을 개선하고 새로운 기능을 추가하는 데 도움이 됩니다.",
+        "message": "FavsHub가 유용하다고 생각하신다면, 지속적인 개발을 지원해 주세요. 여러분의 기여는 확장 프로그램을 개선하고 새로운 기능을 추가하는 데 도움이 됩니다.",
         "description": "Description for donation section"
     },
     "wechatDonateTitle": {

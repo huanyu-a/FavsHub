@@ -1,10 +1,10 @@
 {
     "extName": {
-        "message": "New Tab",
+        "message": "Bookmark Navigation",
         "description": "The name of the extension"
     },
     "extDescription": {
-        "message": "TabMark is a bookmark-based new tab page application that helps you efficiently organize and access your bookmarks.",
+        "message": "FavsHub is a bookmark-based new tab page application that helps you efficiently organize and access your bookmarks.",
         "description": "The description of the extension"
     },
     "welcomeMessage": {
@@ -328,12 +328,12 @@
         "description": "About tab"
     },
     "aboutTitle": {
-        "message": "About TabMark",
-        "description": "Title for About TabMark"
+        "message": "About FavsHub",
+        "description": "Title for About FavsHub"
     },
     "aboutDescription": {
-        "message": "TabMark is a clean and efficient bookmark management extension that helps you better organize and access your web collections.",
-        "description": "Description for About TabMark"
+        "message": "FavsHub is a clean and efficient bookmark management extension that helps you better organize and access your web collections.",
+        "description": "Description for About FavsHub"
     },
     "sourceCode": {
         "message": "Source Code",
@@ -721,11 +721,11 @@
         "description": "Donate tab name in settings"
     },
     "donateTitle": {
-        "message": "Support TabMark Development",
+        "message": "Support FavsHub Development",
         "description": "Title for donation section"
     },
     "donateDescription": {
-        "message": "If you find TabMark useful, please consider supporting its continued development. Your contribution helps us improve the extension and add new features.",
+        "message": "If you find FavsHub useful, please consider supporting its continued development. Your contribution helps us improve the extension and add new features.",
         "description": "Description for donation section"
     },
     "wechatDonateTitle": {

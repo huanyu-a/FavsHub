@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptPro - 提示词管理系统</title>
+
+    <!-- 核心样式 -->
+    <link rel="stylesheet" href="promptpro-bundle.css">
+    <link rel="stylesheet" href="promptpro-card-styles.css">
+    <link rel="stylesheet" href="promptpro-light-theme.css">
+    <link rel="stylesheet" href="promptpro-dark-theme.css">
+
+    <!-- 引用主项目样式 (提供回到顶部进度环动画类) -->
+    <link rel="stylesheet" href="main-bundle.css">
+
+    <!-- 强制应用回到顶部按钮样式 (确保与首页一致) -->
+    <style>
+        /* 强制修复模态框定位 (覆盖 main-bundle.css 的 absolute 定位) */
+        .modal {
+            display: none !important;
+        }
+        .modal.active {
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
+        .modal .modal-content {
+            position: relative !important;
+            top: auto !important;
+            left: auto !important;
+            transform: none !important;
+            width: 100% !important;
+            max-width: 900px !important;
+            margin: 0 auto !important;
+        }
+        #promptModal .modal-content {
+            position: relative !important;
+            top: auto !important;
+            left: auto !important;
+            transform: none !important;
+        }
+
+        /* 强制统一侧边栏板块宽度 */
+        .section-folders,
+        .section-tags,
+        .section-data {
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+            padding-left: 8px !important;
+            padding-right: 8px !important;
+            box-sizing: border-box !important;
+            width: 100% !important;
+        }
+
+        /* 消除数据管理按钮容器的内边距，确保内容对齐 */
+        .data-actions {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+
+        /* 侧边栏分隔线宽度统一 */
+        .sidebar-divider {
+            margin-left: 8px !important;
+            margin-right: 8px !important;
+            width: calc(100% - 16px) !important;
+        }
+
+        /* 强制修复版本号颜色为主题绿色 */
+        .version-badge {
+            color: #10b981 !important;
+            background: rgba(16, 185, 129, 0.1) !important;
+        }
+        [data-theme="dark"] .version-badge {
+            color: #34d399 !important;
+            background: rgba(52, 211, 153, 0.15) !important;
+        }
+
+        /* 强制修复文件夹标签样式 */
+        .prompt-folder-tag {
+            background: rgba(16, 185, 129, 0.1) !important;
+            padding: 2px 8px !important;
+            border-radius: 6px !important;
+        }
+        [data-theme="dark"] .prompt-folder-tag {
+            background: rgba(52, 211, 153, 0.15) !important;
+        }
+
+        #back-to-top-container {
+            position: fixed !important;
+            bottom: 0 !important;
+            right: 0 !important;
+            z-index: 999999 !important;
+            pointer-events: none !important;
+        }
+
+        #back-to-top {
+            width: 50px !important;
+            height: 50px !important;
+            border-radius: 50% !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            background: transparent !important;
+            border: none !important;
+            cursor: pointer !important;
+            box-shadow: 0 4px 20px rgba(93, 173, 226, 0.4) !important;
+            opacity: 0 !important;
+            visibility: hidden !important;
+            transform: translateY(20px) scale(0.8) !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            /* 使用 relative 确保进度环相对于按钮定位 */
+            position: relative !important;
+            margin: 30px !important;
+            z-index: 1 !important;
+        }
+
+        /* 灰色底圈 */
+        #back-to-top::before {
+            content: '';
+            position: absolute !important;
+            width: 100% !important;
+            height: 100% !important;
+            border: 4px solid #F0F0F0 !important;
+            border-radius: 50% !important;
+            box-sizing: border-box !important;
+            z-index: 1 !important;
+        }
+
+        /* 蓝色进度环 */
+        #back-to-top::after {
+            content: '';
+            position: absolute !important;
+            width: 100% !important;
+            height: 100% !important;
+            border: 4px solid #5DADE2 !important;
+            border-radius: 50% !important;
+            border-right-color: transparent !important;
+            border-bottom-color: transparent !important;
+            border-top-color: transparent !important;
+            box-sizing: border-box !important;
+            z-index: 2 !important;
+            clip-path: polygon(50% 50%, 100% 0%, 100% 100%, 0% 100%) !important;
+        }
+
+        #back-to-top.show {
+            opacity: 1 !important;
+            visibility: visible !important;
+            transform: translateY(0) scale(1) !important;
+        }
+
+        #back-to-top:hover {
+            transform: scale(1.1) !important;
+            box-shadow: 0 6px 25px rgba(93, 173, 226, 0.6) !important;
+        }
+
+        #back-to-top svg {
+            width: 22px !important;
+            height: 22px !important;
+            fill: none !important;
+            stroke: #333 !important;
+            stroke-width: 2.5 !important;
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            z-index: 3 !important;
+        }
+
+        #scroll-percent {
+            position: absolute !important;
+            top: 50% !important;
+            left: 50% !important;
+            transform: translate(-50%, -50%) !important;
+            color: #333 !important;
+            font-size: 14px !important;
+            font-weight: 700 !important;
+            z-index: 4 !important;
+            display: none;
+        }
+
+        /* 显示百分比时隐藏图标 */
+        #back-to-top.show-percent svg {
+            display: none !important;
+        }
+        #back-to-top.show-percent #scroll-percent {
+            display: block !important;
+        }
+
+        /* 暗色模式适配 */
+        [data-theme="dark"] #back-to-top::before {
+            border-color: #444 !important;
+        }
+        [data-theme="dark"] #back-to-top svg {
+            stroke: #e0e0e0 !important;
+        }
+        [data-theme="dark"] #scroll-percent {
+            color: #e0e0e0 !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- 统一顶部导航栏 -->
+    <nav class="navbar unified-navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <img src="../images/logo.svg" alt="Logo" class="navbar-logo">
+                <span>PromptPro</span>
+            </div>
+            <div class="nav-menu">
+                <a href="index.html" class="nav-link" data-page="home" title="返回主页">
+                    <i class="ri-home-line"></i>
+                    <span>主页</span>
+                </a>
+                <a href="promptpro.html" class="nav-link active" data-page="promptpro" title="提示词管理">
+                    <i class="ri-bard-line"></i>
+                    <span>提示词管理</span>
+                </a>
+                <div class="nav-divider"></div>
+                <button class="nav-btn-sub active" data-view="prompts" title="全部提示词">
+                    <i class="ri-file-list-3-line"></i>
+                </button>
+                <button class="nav-btn-sub" data-view="favorites" title="收藏">
+                    <i class="ri-star-line"></i>
+                </button>
+            </div>
+            <div class="nav-actions">
+                <div class="nav-search">
+                    <i class="ri-search-line"></i>
+                    <input type="text" id="searchInput" placeholder="搜索提示词...">
+                </div>
+                <button class="nav-icon-btn" id="navThemeBtn" title="切换主题">
+                    <i class="ri-moon-line"></i>
+                </button>
+                <button class="btn btn-primary" id="createPromptBtn">
+                    <i class="ri-add-line"></i>
+                    <span>新建提示词</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主内容区 -->
+    <main class="main-content">
+        <div class="app-layout">
+            <!-- 左侧边栏 -->
+            <aside class="sidebar">
+                <!-- 文件夹 -->
+                <div class="sidebar-section section-folders">
+                    <div class="sidebar-header">
+                        <i class="ri-folder-line"></i>
+                        <span>文件夹</span>
+                        <button class="sidebar-add-btn" id="addFolderBtn" title="新建文件夹">
+                            <i class="ri-add-line"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar-list" id="folderList">
+                        <div class="sidebar-item active" data-folder="">
+                            <span>全部</span>
+                            <span class="sidebar-count" id="allCount">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分隔线 -->
+                <div class="sidebar-divider"></div>
+
+                <!-- 标签 -->
+                <div class="sidebar-section section-tags">
+                    <div class="sidebar-header">
+                        <i class="ri-price-tag-3-line"></i>
+                        <span>标签</span>
+                        <button class="sidebar-add-btn" id="addTagBtn" title="新建标签">
+                            <i class="ri-add-line"></i>
+                        </button>
+                    </div>
+                    <div class="sidebar-list" id="tagList">
+                        <div class="sidebar-item active" data-tag="">
+                            <span>全部</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 分隔线 -->
+                <div class="sidebar-divider"></div>
+
+                <!-- 数据管理 -->
+                <div class="sidebar-section section-data">
+                    <div class="sidebar-header">
+                        <i class="ri-database-2-line"></i>
+                        <span>数据管理</span>
+                    </div>
+                    <div class="data-actions">
+                        <button class="data-btn" id="exportDataBtn">
+                            <i class="ri-download-cloud-2-line"></i>
+                            导出数据
+                        </button>
+                        <button class="data-btn" id="importDataBtn">
+                            <i class="ri-upload-cloud-2-line"></i>
+                            导入数据
+                        </button>
+                    </div>
+                    <input type="file" id="importFileInput" accept=".json" style="display: none;">
+                </div>
+            </aside>
+
+            <!-- 右侧主内容 -->
+            <div class="main-area">
+                <!-- 筛选提示栏 -->
+                <div class="filter-bar" id="filterBar" style="display: none;">
+                    <span class="filter-text">当前筛选：</span>
+                    <span id="filterInfo"></span>
+                    <button class="btn btn-xs btn-clear" id="clearFilter">
+                        <i class="ri-close-line"></i> 清除
+                    </button>
+                </div>
+
+                <!-- 提示词列表 -->
+                <div class="prompts-container">
+                    <div class="prompts-grid" id="promptsGrid">
+                        <!-- 动态加载 -->
+                    </div>
+                    <div class="loading" id="loading">
+                        <i class="ri-loader-4-line spin"></i>
+                        <p>加载中...</p>
+                    </div>
+                    <div class="empty-state" id="emptyState" style="display: none;">
+                        <i class="ri-file-warning-line"></i>
+                        <p>暂无数据</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 提示词详情模态框 -->
+    <div class="modal" id="promptModal">
+        <div class="modal-content modal-large">
+            <div class="modal-header">
+                <h2 id="modalTitle">提示词详情</h2>
+                <button class="modal-close" id="closeModal">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="prompt-detail">
+                    <div class="detail-meta">
+                        <span class="meta-item" id="detailFolder">
+                            <i class="ri-folder-line"></i>
+                            <span></span>
+                        </span>
+                        <span class="meta-item" id="detailTags">
+                            <i class="ri-price-tag-3-line"></i>
+                            <span></span>
+                        </span>
+                        <span class="meta-item" id="detailTime">
+                            <i class="ri-time-line"></i>
+                            <span></span>
+                        </span>
+                    </div>
+                    <div class="detail-description">
+                        <h4>描述</h4>
+                        <p id="detailDescription"></p>
+                    </div>
+                    <div class="detail-content">
+                        <h4>内容</h4>
+                        <pre id="detailContent"></pre>
+                    </div>
+                    <div class="detail-versions">
+                        <h4>版本历史</h4>
+                        <div class="versions-list" id="versionsList"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="copyContentBtn">
+                    <i class="ri-file-copy-line"></i>
+                    复制内容
+                </button>
+                <button class="btn btn-primary" id="editPromptBtn">
+                    <i class="ri-edit-line"></i>
+                    编辑
+                </button>
+                <button class="btn btn-danger" id="deletePromptBtn">
+                    <i class="ri-delete-bin-line"></i>
+                    删除
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 创建/编辑提示词模态框 -->
+    <div class="modal" id="editModal">
+        <div class="modal-content modal-xlarge">
+            <div class="modal-header">
+                <h2 id="editModalTitle">新建提示词</h2>
+                <button class="modal-close" id="closeEditModal">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="promptForm">
+                    <input type="hidden" id="editPromptId">
+                    <div class="form-group">
+                        <label for="formTitle">标题 *</label>
+                        <input type="text" id="formTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="formDescription">描述</label>
+                        <input type="text" id="formDescription">
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>文件夹</label>
+                            <div class="custom-select" id="folderSelect">
+                                <div class="custom-select-trigger" data-select-id="folderSelect">
+                                    <span class="selected-text placeholder">选择文件夹</span>
+                                    <i class="ri-arrow-down-s-line arrow"></i>
+                                </div>
+                                <div class="custom-select-dropdown">
+                                    <div class="custom-select-option" data-value="">选择文件夹</div>
+                                </div>
+                            </div>
+                            <input type="hidden" id="formFolder">
+                        </div>
+                        <div class="form-group">
+                            <label for="formCurrentVersion">版本号</label>
+                            <input type="text" id="formCurrentVersion" value="1.0.0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>标签</label>
+                        <div id="formTags" class="tag-selector">
+                            <div class="tag-list" id="formTagList"></div>
+                            <input type="text" id="formTagInput" placeholder="输入标签后回车" class="tag-input">
+                            <div id="tagSuggestions" class="tag-suggestions" style="display: none;"></div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="formContent">内容 *</label>
+                        <textarea id="formContent" rows="20" required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelEditBtn">取消</button>
+                <button class="btn btn-primary" id="savePromptBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新建文件夹模态框 -->
+    <div class="modal" id="folderModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="folderModalTitle">新建文件夹</h2>
+                <button class="modal-close" id="closeFolderModal">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="folderNameInput">文件夹名称</label>
+                    <input type="text" id="folderNameInput" placeholder="输入文件夹名称" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelFolderBtn">取消</button>
+                <button class="btn btn-primary" id="saveFolderBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新建标签模态框 -->
+    <div class="modal" id="tagModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="tagModalTitle">新建标签</h2>
+                <button class="modal-close" id="closeTagModal">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="tagNameInput">标签名称</label>
+                    <input type="text" id="tagNameInput" placeholder="输入标签名称" required>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelTagBtn">取消</button>
+                <button class="btn btn-primary" id="saveTagBtn">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除确认模态框 -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>确认删除</h2>
+                <button class="modal-close" id="closeDeleteModal">
+                    <i class="ri-close-line"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>确定要删除这个提示词吗？此操作不可撤销。</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="cancelDeleteBtn">取消</button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">删除</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast通知 -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- 回到顶部按钮 -->
+    <div id="back-to-top-container" style="position: fixed; bottom: 0; right: 0; z-index: 999999; pointer-events: none;">
+        <div id="back-to-top" title="回到顶部" style="pointer-events: auto;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px; height:20px;">
+                <path d="M12 19V5M5 12l7-7 7 7"></path>
+            </svg>
+            <span id="scroll-percent" class="scroll-percent-text">0%</span>
+        </div>
+    </div>
+
+    <script src="promptpro-bundle.js"></script>
+</body>
+</html>

@@ -92,17 +92,14 @@ const SearchEngineManager = {
   // 获取默认搜索引擎
   getDefaultEngine() {
     const defaultEngineName = localStorage.getItem('selectedSearchEngine');
-    console.log('[Search] Getting default engine, stored name:', defaultEngineName);
-    
+
     if (defaultEngineName) {
       const allEngines = this.getAllEngines();
       const engine = allEngines.find(e => e.name === defaultEngineName);
       if (engine) {
-        console.log('[Search] Found engine config:', engine);
         return engine;
       }
     }
-    console.log('[Search] Using fallback engine (baidu)');
     return ALL_ENGINES[0]; // 默认返回 Google
   },
 
@@ -110,9 +107,8 @@ const SearchEngineManager = {
   setDefaultEngine(engineName) {
     const allEngines = this.getAllEngines();
     const engine = allEngines.find(e => e.name === engineName);
-    
+
     if (engine) {
-      console.log('[Search] Setting default engine to:', engine);
       localStorage.setItem('selectedSearchEngine', engineName);
       return true;
     }
@@ -152,8 +148,6 @@ function createSearchEngineOption(engine, isAddButton = false) {
 
 // 处理搜索引擎选择
 function handleSearchEngineSelection(engine) {
-  console.log('[Search] Selecting engine:', engine);
-  
   // 关闭下拉菜单
   const dropdownContainer = document.querySelector('.search-engine-dropdown');
   if (dropdownContainer) {
@@ -162,8 +156,6 @@ function handleSearchEngineSelection(engine) {
 
   // 使用 SearchEngineManager 设置默认搜索引擎
   if (SearchEngineManager.setDefaultEngine(engine.name)) {
-    console.log('[Search] Default engine set to:', engine);
-    
     // 更新搜索引擎图标
     updateSearchEngineIcon(engine);
 
@@ -208,8 +200,6 @@ function updateTabsState(engineName) {
 
 // 修改初始化函数
 function initializeSearchEngine() {
-  console.log('[Search] Initializing search engine');
-  
   // 确保 DOM 已经加载完成
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
@@ -223,37 +213,30 @@ function initializeSearchEngine() {
 // 新增 UI 初始化函数
 function initializeSearchEngineUI() {
   const defaultEngine = SearchEngineManager.getDefaultEngine();
-  console.log('[Search] Default engine:', defaultEngine);
-  
+
   if (defaultEngine) {
-    console.log('[Search] Updating UI for engine:', defaultEngine.name);
-    
     // 确保搜索表单和图标元素存在
     const searchForm = document.querySelector('.search-form');
     const searchEngineIcon = document.getElementById('search-engine-icon');
-    
+
     if (searchForm && searchEngineIcon) {
       // 更新搜索引擎图标
       updateSearchEngineIcon(defaultEngine);
-      
+
       // 更新标签栏状态
       updateTabsState(defaultEngine.name);
-      
+
       // 更新搜索表单中的默认搜索引擎
       searchForm.setAttribute('data-current-engine', defaultEngine.name);
-      
+
       // 确保图标正确加载
       if (searchEngineIcon.src !== defaultEngine.icon) {
         searchEngineIcon.src = defaultEngine.icon;
         searchEngineIcon.alt = `${getLocalizedMessage(defaultEngine.label)} Search`;
       }
-      
-      console.log('[Search] UI successfully updated for engine:', defaultEngine.name);
     } else {
       console.error('[Search] Required DOM elements not found');
     }
-  } else {
-    console.warn('[Search] No default engine found, using fallback');
   }
 }
 
@@ -353,8 +336,6 @@ function createTemporarySearchTabs() {
 
 // 修改 createSearchEngineDropdown 函数，添加对临时搜索标签的更新
 function createSearchEngineDropdown() {
-  console.log('[Search] Creating dropdown menu');
-  
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
       initializeSearchEngine();

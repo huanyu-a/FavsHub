@@ -5,11 +5,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title data-i18n="extName">__MSG_extName__</title>
-  <link href="output.css" rel="stylesheet">
-  <link href="styles.css" rel="stylesheet">
-  <link href="sidepanel.css" rel="stylesheet">
+  <!-- Favicon for Edge and Chrome -->
+  <link rel="icon" type="image/png" sizes="32x32" href="../images/favicon.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="../images/icon-16.png">
+  <link rel="shortcut icon" href="../images/favicon.png">
+  <link href="main-bundle.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link rel="icon" type="image/png" href="../images/favicon.png">
   <style id="dynamic-background"></style>
   <script src="localization.js"></script>
   <script src="lodash.min.js"></script>
@@ -17,8 +18,6 @@
   <script type="module" src="script.js"></script>
   <script src="wallpaper.js" defer></script>
   <script type="module" src="icons.js"></script>
-  <script type="module" src="bookmark-cleanup.js"></script>
-  <script type="module" src="feature-tips.js"></script>
   <script type="module" src="settings.js"></script>
   <script type="module" src="search-engine-dropdown.js"></script>
   <script src="sidepanel-manager.js"></script>
@@ -88,7 +87,7 @@
     <aside class="custom-width p-4 overflow-auto border-r border-gray-200 relative">
       <div id="sidebar-logo" class="mb-4">
         <img src="../images/logo.svg" alt="Logo" id="logo-image">
-        <h1 id="logo-title">TabMark</h1>
+        <h1 id="logo-title">FavsHub</h1>
       </div>
       <ul id="categories-list" class="space-y-2"></ul>
     </aside>
@@ -486,17 +485,6 @@
                 <input type="checkbox" id="sidepanel-open-in-sidepanel">
                 <span class="slider round"></span>
               </label>
-            </div>
-          </div>
-          <div id="bookmark-management-settings" class="settings-tab-content">
-            <h3 class="settings-modal-subtitle" data-i18n="bookmarkCleanupSettingsTitle">书签清理与统计</h3>
-            <p data-i18n="bookmarkCleanupSettingsDescription">清理重复和失效的书签，查看书签使用统计数据，帮助您更好地管理书签。</p>
-            
-            <div class="bookmark-cleanup-actions">
-              <button id="open-bookmark-cleanup" class="primary-button">
-                <span class="material-icons">cleaning_services</span>
-                <span data-i18n="openBookmarkCleanup">打开书签清理工具</span>
-              </button>
             </div>
           </div>
           <div id="wheel-switching-settings" class="settings-tab-content">

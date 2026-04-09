@@ -1,10 +1,10 @@
 {
     "extName": {
-        "message": "新しいタブ",
+        "message": "ブックマークナビゲーション",
         "description": "拡張機能の名前"
     },
     "extDescription": {
-        "message": "TabMark はブックマークに基づいた新しいタブページアプリケーションで、ブックマークを効率的に整理し、アクセスするのに役立ちます。",
+        "message": "FavsHub はブックマークに基づいた新しいタブページアプリケーションで、ブックマークを効率的に整理し、アクセスするのに役立ちます。",
         "description": "拡張機能の説明"
     },
     "welcomeMessage": {
@@ -380,7 +380,7 @@
         "description": "概要タブ"
     },
     "aboutTitle": {
-        "message": "TabMark について",
+        "message": "FavsHub について",
         "description": "概要ページのタイトル"
     },
     "contactUs": {
@@ -722,11 +722,11 @@
         "description": "設定の寄付タブ名"
     },
     "donateTitle": {
-        "message": "TabMark開発をサポートする",
+        "message": "FavsHub開発をサポートする",
         "description": "寄付セクションのタイトル"
     },
     "donateDescription": {
-        "message": "TabMarkが役立つと感じられた場合は、継続的な開発をサポートすることをご検討ください。あなたの貢献は、拡張機能の改善と新機能の追加に役立ちます。",
+        "message": "FavsHubが役立つと感じられた場合は、継続的な開発をサポートすることをご検討ください。あなたの貢献は、拡張機能の改善と新機能の追加に役立ちます。",
         "description": "寄付セクションの説明"
     },
     "wechatDonateTitle": {

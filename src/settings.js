@@ -13,7 +13,8 @@ class SettingsManager {
     this.tabContents = document.querySelectorAll('.settings-tab-content');
     this.bgOptions = document.querySelectorAll('.settings-bg-option');
     this.enableFloatingBallCheckbox = document.getElementById('enable-floating-ball');
-    this.enableQuickLinksCheckbox = document.getElementById('enable-quick-links');
+    // 快捷链接功能已删除
+    // this.enableQuickLinksCheckbox = document.getElementById('enable-quick-links');
     this.openInNewTabCheckbox = document.getElementById('open-in-new-tab');
     
     // 侧边栏模式下的链接打开方式设置元素可能不存在于所有页面
@@ -31,7 +32,8 @@ class SettingsManager {
     this.settingsModalContent = document.querySelector('.settings-modal-content');
     this.showHistorySuggestionsCheckbox = document.getElementById('show-history-suggestions');
     this.showBookmarkSuggestionsCheckbox = document.getElementById('show-bookmark-suggestions');
-    this.enableWheelSwitchingCheckbox = document.getElementById('enable-wheel-switching');
+    this.enableWheelSwitchingCheckbox = null; // 文件夹切换功能已删除
+    // this.enableWheelSwitchingCheckbox = document.getElementById('enable-wheel-switching');
     this.openSearchInNewTabCheckbox = document.getElementById('open-search-in-new-tab');
     this.init();
   }
@@ -42,10 +44,11 @@ class SettingsManager {
     this.initTheme();
     
     // 只在相关元素存在时才调用各个初始化方法
-    if (this.enableQuickLinksCheckbox) {
-      this.initQuickLinksSettings();
-    }
-    
+    // 快捷链接功能已删除
+    // if (this.enableQuickLinksCheckbox) {
+    //   this.initQuickLinksSettings();
+    // }
+
     if (this.enableFloatingBallCheckbox) {
       this.initFloatingBallSettings();
     }
@@ -54,12 +57,8 @@ class SettingsManager {
       this.initLinkOpeningSettings();
     }
     
-    // 检查书签管理相关元素
-    const bookmarkCleanupButton = document.getElementById('open-bookmark-cleanup');
-    if (bookmarkCleanupButton) {
-      this.initBookmarkManagementTab();
-    }
-    
+    // 书签管理相关已删除
+
     // 检查宽度设置相关元素
     if (this.widthSlider && this.widthValue) {
       this.initBookmarkWidthSettings();
@@ -92,9 +91,10 @@ class SettingsManager {
     }
     
     // 检查滚轮切换设置相关元素
-    if (this.enableWheelSwitchingCheckbox) {
-      this.initWheelSwitchingTab();
-    }
+    // 文件夹切换功能已删除
+    // if (this.enableWheelSwitchingCheckbox) {
+    //   this.initWheelSwitchingTab();
+    // }
     
     // 检查快捷键设置相关元素
     const configureShortcuts = document.getElementById('configure-shortcuts');
@@ -187,13 +187,26 @@ class SettingsManager {
     if (this.settingsSidebar) {
       this.settingsSidebar.classList.add('open');
     }
+    if (this.settingsOverlay) {
+      this.settingsOverlay.classList.add('active');
+    }
   }
-  
+
   // 关闭设置侧边栏
   closeSettingsSidebar() {
     if (this.settingsSidebar) {
       this.settingsSidebar.classList.remove('open');
     }
+    if (this.settingsOverlay) {
+      this.settingsOverlay.classList.remove('active');
+      // 强制隐藏遮罩层，确保遮罩层不会残留在页面上
+      this.settingsOverlay.style.display = 'none';
+      setTimeout(() => {
+        this.settingsOverlay.style.display = '';
+      }, 300);
+    }
+    // 恢复背景滚动
+    document.body.style.overflow = '';
   }
 
   switchTab(tabName) {
@@ -285,54 +298,122 @@ class SettingsManager {
 
   initTheme() {
     const themeSelect = document.getElementById('theme-select');
-    const savedTheme = localStorage.getItem('theme') || 'auto';
     
-    // 设置下拉菜单的初始值
-    themeSelect.value = savedTheme;
+    // 优先使用 chrome.storage.sync（扩展环境更可靠）
+    const loadTheme = (callback) => {
+      if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+        chrome.storage.sync.get(['theme'], (result) => {
+          const savedTheme = result.theme || localStorage.getItem('theme') || 'auto';
+          callback(savedTheme);
+        });
+      } else {
+        const savedTheme = localStorage.getItem('theme') || 'auto';
+        callback(savedTheme);
+      }
+    };
+
+    loadTheme((savedTheme) => {
+      // 计算实际生效的主题
+      let effectiveTheme = savedTheme;
+      if (savedTheme === 'auto') {
+        effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+
+      // 强制同步 html 和 body，确保两者完全一致
+      document.documentElement.setAttribute('data-theme', effectiveTheme);
+      document.body.setAttribute('data-theme', effectiveTheme);
+      localStorage.setItem('theme', savedTheme);
+
+      if (themeSelect) {
+        themeSelect.value = savedTheme;
+      }
+      this.updateThemeIcon(effectiveTheme === 'dark');
+
+      // 监听系统主题变化
+      window.matchMedia('(prefers-color-scheme: dark)').addListener((e) => {
+        if (localStorage.getItem('theme') === 'auto') {
+          const isDark = e.matches;
+          const theme = isDark ? 'dark' : 'light';
+          document.documentElement.setAttribute('data-theme', theme);
+          document.body.setAttribute('data-theme', theme);
+          this.updateThemeIcon(isDark);
+        }
+      });
+
+      // 监听主题选择变化
+      if (themeSelect) {
+        themeSelect.addEventListener('change', (e) => {
+          const selectedTheme = e.target.value;
+          this.saveTheme(selectedTheme);
+        });
+      }
+
+      // 导航栏主题切换按钮
+      const navThemeBtn = document.getElementById('navThemeBtn');
+      if (navThemeBtn) {
+        navThemeBtn.addEventListener('click', () => {
+          this.toggleTheme();
+        });
+      }
+
+      // 保留原有的主题切换按钮功能
+      const themeToggleBtn = document.getElementById('theme-toggle-btn');
+      if (themeToggleBtn) {
+        themeToggleBtn.addEventListener('click', () => {
+          this.toggleTheme();
+        });
+      }
+    });
+  }
+
+  // 保存主题的通用方法
+  saveTheme(theme) {
+    // 优先使用 chrome.storage.sync（扩展环境更可靠）
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+      chrome.storage.sync.set({ theme: theme }, () => {
+        // 保存成功
+      });
+    }
     
-    // 如果是自动模式，根据系统主题设置初始主题
-    if (savedTheme === 'auto') {
-      this.setThemeBasedOnSystem();
-    } else {
-      document.documentElement.setAttribute('data-theme', savedTheme);
-      this.updateThemeIcon(savedTheme === 'dark');
+    // 同时写入 localStorage 作为备份
+    try {
+      localStorage.setItem('theme', theme);
+    } catch (e) {
+      console.error('[Theme] localStorage save failed:', e);
     }
 
-    // 监听系统主题变化
-    window.matchMedia('(prefers-color-scheme: dark)').addListener((e) => {
-      if (localStorage.getItem('theme') === 'auto') {
-        const isDark = e.matches;
-        document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
-        this.updateThemeIcon(isDark);
-      }
-    });
+    // 更新 UI
+    const themeSelect = document.getElementById('theme-select');
+    if (themeSelect) {
+      themeSelect.value = theme;
+    }
 
-    // 监听主题选择变化
-    themeSelect.addEventListener('change', (e) => {
-      const selectedTheme = e.target.value;
-      localStorage.setItem('theme', selectedTheme);
-      
-      if (selectedTheme === 'auto') {
-        this.setThemeBasedOnSystem();
-      } else {
-        document.documentElement.setAttribute('data-theme', selectedTheme);
-        this.updateThemeIcon(selectedTheme === 'dark');
-      }
-    });
+    let effectiveTheme = theme;
+    if (theme === 'auto') {
+      effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
 
-    // 保留原有的主题切换按钮功能
-    const themeToggleBtn = document.getElementById('theme-toggle-btn');
-    if (themeToggleBtn) {
-      themeToggleBtn.addEventListener('click', () => {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        themeSelect.value = newTheme;
-        
-        this.updateThemeIcon(newTheme === 'dark');
+    document.documentElement.setAttribute('data-theme', effectiveTheme);
+    document.body.setAttribute('data-theme', effectiveTheme);
+    this.updateThemeIcon(effectiveTheme === 'dark');
+  }
+
+  // 切换主题方法
+  toggleTheme() {
+    // 从 chrome.storage.sync 读取当前主题
+    const readAndToggle = (currentTheme) => {
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      this.saveTheme(newTheme);
+    };
+    
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.sync) {
+      chrome.storage.sync.get(['theme'], (result) => {
+        const currentTheme = result.theme || localStorage.getItem('theme') || 'light';
+        readAndToggle(currentTheme);
       });
+    } else {
+      const currentTheme = localStorage.getItem('theme') || 'light';
+      readAndToggle(currentTheme);
     }
   }
 
@@ -340,38 +421,30 @@ class SettingsManager {
     const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const theme = isDarkMode ? 'dark' : 'light';
     document.documentElement.setAttribute('data-theme', theme);
+    document.body.setAttribute('data-theme', theme);
     this.updateThemeIcon(isDarkMode);
   }
 
   updateThemeIcon(isDark) {
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
     if (!themeToggleBtn) return;
-    
+
     themeToggleBtn.innerHTML = isDark ? ICONS.dark_mode : ICONS.light_mode;
-  }
 
-  initQuickLinksSettings() {
-    // 加载快捷链接设置
-    chrome.storage.sync.get(['enableQuickLinks'], (result) => {
-      this.enableQuickLinksCheckbox.checked = result.enableQuickLinks !== false;
-      this.toggleQuickLinksVisibility(this.enableQuickLinksCheckbox.checked);
-    });
-
-    // 监听快捷链接设置变化
-    this.enableQuickLinksCheckbox.addEventListener('change', () => {
-      const isEnabled = this.enableQuickLinksCheckbox.checked;
-      chrome.storage.sync.set({ enableQuickLinks: isEnabled }, () => {
-        this.toggleQuickLinksVisibility(isEnabled);
-      });
-    });
-  }
-
-  toggleQuickLinksVisibility(show) {
-    const quickLinksWrapper = document.querySelector('.quick-links-wrapper');
-    if (quickLinksWrapper) {
-      quickLinksWrapper.style.display = show ? 'flex' : 'none';
+    // 同时更新导航栏主题按钮图标
+    const navThemeBtn = document.getElementById('navThemeBtn');
+    if (navThemeBtn) {
+      const icon = navThemeBtn.querySelector('i');
+      if (icon) {
+        icon.className = isDark ? 'ri-moon-line' : 'ri-sun-line';
+        navThemeBtn.title = isDark ? '切换到浅色模式' : '切换到深色模式';
+      }
     }
   }
+
+  // 快捷链接功能已删除
+  // initQuickLinksSettings() { ... }
+  // toggleQuickLinksVisibility(show) { ... }
 
   initFloatingBallSettings() {
     // 加载悬浮球设置
@@ -467,33 +540,8 @@ class SettingsManager {
     }
   }
 
-  initWheelSwitchingTab() {
-    const tabButton = document.querySelector('[data-tab="wheel-switching"]');
-    if (tabButton) {
-      tabButton.addEventListener('click', () => {
-        this.switchTab('wheel-switching');
-      });
-    }
-    
-    // 加载保存的设置
-    chrome.storage.sync.get({ enableWheelSwitching: false }, (result) => {
-      if (this.enableWheelSwitchingCheckbox) {
-        this.enableWheelSwitchingCheckbox.checked = result.enableWheelSwitching;
-        
-        // 添加事件监听器
-        this.enableWheelSwitchingCheckbox.addEventListener('change', () => {
-          const isEnabled = this.enableWheelSwitchingCheckbox.checked;
-          chrome.storage.sync.set({ enableWheelSwitching: isEnabled });
-          
-          // 触发自定义事件，通知滚轮切换状态变化
-          document.dispatchEvent(new CustomEvent('wheelSwitchingChanged', {
-            detail: { enabled: isEnabled }
-          }));
-        });
-      }
-    });
-  }
-
+  // 文件夹切换功能已删除
+  // initWheelSwitchingTab() { ... }
   // 添加 debounce 方法来优化性能
   debounce(func, wait) {
     let timeout;

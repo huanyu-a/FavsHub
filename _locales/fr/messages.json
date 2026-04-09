@@ -1,6 +1,6 @@
 {
     "extName": {
-        "message": "Nouvel onglet",
+        "message": "Navigation Signets",
         "description": "Le nom de l'extension"
     },
     "extDescription": {
@@ -304,7 +304,7 @@
         "description": "Onglet À propos"
     },
     "aboutTitle": {
-        "message": "À propos de TabMark",
+        "message": "À propos de FavsHub",
         "description": "Titre de la page À propos"
     },
     "contactUs": {
@@ -628,11 +628,11 @@
         "description": "Donate tab name in settings"
     },
     "donateTitle": {
-        "message": "Soutenez le Développement de TabMark",
+        "message": "Soutenez le Développement de FavsHub",
         "description": "Title for donation section"
     },
     "donateDescription": {
-        "message": "Si vous trouvez TabMark utile, veuillez envisager de soutenir son développement continu. Votre contribution nous aide à améliorer l'extension et à ajouter de nouvelles fonctionnalités.",
+        "message": "Si vous trouvez FavsHub utile, veuillez envisager de soutenir son développement continu. Votre contribution nous aide à améliorer l'extension et à ajouter de nouvelles fonctionnalités.",
         "description": "Description for donation section"
     },
     "wechatDonateTitle": {

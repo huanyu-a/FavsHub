@@ -1,10 +1,10 @@
 {
     "extName": {
-        "message": "新标签页",
+        "message": "标签导航",
         "description": "扩展的名称"
     },
     "extDescription": {
-        "message": "TabMark 是一个基于书签的新标签页应用程序，帮助您高效地组织和访问您的书签。",
+        "message": "FavsHub 是一个基于书签的新标签页应用程序，帮助您高效地组织和访问您的书签。",
         "description": "扩展的描述"
     },
     "welcomeMessage": {

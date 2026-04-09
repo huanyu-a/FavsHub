@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
-  "name": "TabMark-Bookmark New Tab",
-  "version": "1.245",
+  "name": "FavsHub",
+  "version": "1.247",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
   "chrome_url_overrides": {
@@ -30,7 +30,7 @@
     }
   },
   "icons": {
-    "16": "images/icon-16.png",
+    "16": "images/favicon.ico",
     "48": "images/icon-48.png",
     "128": "images/icon-128.png"
   },
@@ -51,10 +51,15 @@
   "web_accessible_resources": [
     {
       "resources": [
-        "_favicon/*", 
+        "_favicon/*",
         "src/fonts/*",
+        "src/promptpro.html",
+        "src/promptpro-bundle.css",
+        "src/promptpro-bundle.js",
+        "src/main-bundle.css",
         "images/sider-icon/*",
-        "images/*"
+        "images/*",
+        "favicon.ico"
       ],
       "matches": ["<all_urls>"]
     }

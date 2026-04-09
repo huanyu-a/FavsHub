@@ -1,6 +1,6 @@
 {
     "extName": {
-        "message": "Neue Registerkarte",
+        "message": "Lesezeichen-Navigation",
         "description": "Der Name der Erweiterung"
     },
     "extDescription": {
@@ -332,7 +332,7 @@
         "description": "Über-Tab"
     },
     "aboutTitle": {
-        "message": "Über TabMark",
+        "message": "Über FavsHub",
         "description": "Titel der Über-Seite"
     },
     "contactUs": {
@@ -674,11 +674,11 @@
         "description": "Donate tab name in settings"
     },
     "donateTitle": {
-        "message": "Unterstützen Sie die TabMark-Entwicklung",
+        "message": "Unterstützen Sie die FavsHub-Entwicklung",
         "description": "Title for donation section"
     },
     "donateDescription": {
-        "message": "Wenn Sie TabMark nützlich finden, erwägen Sie bitte, die kontinuierliche Entwicklung zu unterstützen. Ihr Beitrag hilft uns, die Erweiterung zu verbessern und neue Funktionen hinzuzufügen.",
+        "message": "Wenn Sie FavsHub nützlich finden, erwägen Sie bitte, die kontinuierliche Entwicklung zu unterstützen. Ihr Beitrag hilft uns, die Erweiterung zu verbessern und neue Funktionen hinzuzufügen.",
         "description": "Description for donation section"
     },
     "wechatDonateTitle": {
