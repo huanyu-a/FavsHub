@@ -4,6 +4,13 @@
 
 ---
 
+## 📦 下载
+
+- [FavsHub v2.0.0 源码包 (ZIP)](https://github.com/huanyu-a/FavsHub/archive/refs/tags/v2.0.0.zip)
+- [FavsHub v2.0.0 源码包 (TAR.GZ)](https://github.com/huanyu-a/FavsHub/archive/refs/tags/v2.0.0.tar.gz)
+
+---
+
 ## 📋 目录
 
 - [核心功能](#核心功能)
