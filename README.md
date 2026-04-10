@@ -6,6 +6,7 @@
 
 ## 📦 下载
 
+- [FavsHub v2.0.0 完整项目包 (ZIP)](https://github.com/huanyu-a/FavsHub/releases/download/v2.0.0/FavsHub.zip)
 - [FavsHub v2.0.0 源码包 (ZIP)](https://github.com/huanyu-a/FavsHub/archive/refs/tags/v2.0.0.zip)
 - [FavsHub v2.0.0 源码包 (TAR.GZ)](https://github.com/huanyu-a/FavsHub/archive/refs/tags/v2.0.0.tar.gz)
 
