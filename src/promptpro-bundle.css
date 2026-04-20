@@ -1,5 +1,5 @@
 /* ==========================================
-   PromptPro - macOS 风格样弝�?   ========================================== */
+   PromptPro - macOS 风格样弝�?   ========================================== */
 
 /* 全局坘針 - 统一酝色方案 */
 :root {
@@ -51,7 +51,7 @@ body {
     min-height: 100vh;
 }
 
-/* 导航�?- macOS 窗坣风格 */
+/* 导航�?- macOS 窗坣风格 */
 .navbar {
     background: rgba(255, 255, 255, 0.72);
     backdrop-filter: var(--blur);
@@ -164,7 +164,7 @@ body {
     flex-shrink: 0;
 }
 
-/* 顶部杜索�?*/
+/* 顶部杜索�?*/
 .nav-search {
     position: relative;
     width: 220px;
@@ -333,7 +333,7 @@ body {
     margin-bottom: 16px;
 }
 
-/* 文件夹板块样�?*/
+/* 文件夹板块样�?*/
 .section-folders {
     background: rgba(16, 185, 129, 0.03);
     border-radius: 12px;
@@ -584,7 +584,7 @@ body {
     color: var(--primary-color);
 }
 
-/* 标签多选网�?- macOS 风格 */
+/* 标签多选网�?- macOS 风格 */
 .tag-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
@@ -674,7 +674,7 @@ body {
     font-size: 13px;
 }
 
-/* 坳侧主内�?*/
+/* 坳侧主内�?*/
 .main-area {
     flex: 1;
     padding: 32px 48px;
@@ -724,7 +724,7 @@ body {
     border-color: var(--primary-color);
 }
 
-/* 杝示话列�?*/
+/* 杝示话列�?*/
 .prompts-container {
     min-height: 400px;
 }
@@ -735,7 +735,7 @@ body {
     gap: 24px;
 }
 
-/* 杝示话坡�?- macOS 风格 */
+/* 杝示话坡�?- macOS 风格 */
 .prompt-card {
     background: var(--card-bg);
     backdrop-filter: blur(20px);
@@ -796,27 +796,27 @@ body {
     flex-shrink: 0;
 }
 
-.prompt-btn-copy,
-.prompt-btn-edit {
-    opacity: 0;
+.copy-btn,
+.edit-btn {
+    opacity: 1;
     transition: opacity 0.2s, background 0.2s, transform 0.2s;
-    transform: scale(0.9);
+    transform: scale(1);
 }
 
-.prompt-btn-copy:hover {
+.copy-btn:hover {
     background: rgba(52, 199, 89, 0.15);
     color: var(--success-color);
     transform: scale(1.05);
 }
 
-.prompt-btn-edit:hover {
+.edit-btn:hover {
     background: var(--primary-light);
     color: var(--primary-color);
     transform: scale(1.05);
 }
 
-.prompt-card:hover .prompt-btn-copy,
-.prompt-card:hover .prompt-btn-edit {
+.prompt-card:hover .copy-btn,
+.prompt-card:hover .edit-btn {
     opacity: 1;
     transform: scale(1);
 }
@@ -902,7 +902,7 @@ body {
     box-shadow: 0 1px 3px rgba(106, 161, 183, 0.2);
 }
 
-/* 加载状�?*/
+/* 加载状�?*/
 .loading {
     text-align: center;
     padding: 3rem;
@@ -923,7 +923,7 @@ body {
     to { transform: rotate(360deg); }
 }
 
-/* 空状�?*/
+/* 空状�?*/
 .empty-state {
     text-align: center;
     padding: 4rem 2rem;
@@ -1071,7 +1071,7 @@ body {
     flex-shrink: 0;
 }
 
-/* 杝示话详�?*/
+/* 杝示话详�?*/
 .prompt-detail {
     display: flex;
     flex-direction: column;
@@ -1246,7 +1246,7 @@ body {
     color: var(--text-secondary);
 }
 
-/* 折坠�?*/
+/* 折坠�?*/
 .vcol-body {
     max-height: 0;
     overflow: hidden;
@@ -1495,7 +1495,7 @@ body {
     color: var(--primary-color) !important;
 }
 
-/* 自定义下拉组�? - 优化�?*/
+/* 自定义下拉组�? - 优化�?*/
 .custom-select {
     position: relative;
     width: 100%;
@@ -1640,7 +1640,7 @@ body {
     color: var(--primary-color);
 }
 
-/* 文件夹图?�� ��?*/
+/* 文件夹图?�� ��?*/
 .custom-select-option .folder-icon {
     color: var(--text-secondary);
     transition: color 0.2s;
@@ -1665,7 +1665,7 @@ body {
     gap: 8px;
 }
 
-.toast {
+.toast-container .toast {
     padding: 12px 16px;
     background: rgba(255, 255, 255, 0.95);
     backdrop-filter: var(--blur);
@@ -1673,13 +1673,16 @@ body {
     border-radius: 12px;
     box-shadow: var(--shadow-lg);
     border: 1px solid var(--border-color);
-    display: flex;
+    display: flex !important;
     align-items: center;
     gap: 10px;
     min-width: 280px;
-    animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-size: 13px;
     font-weight: 500;
+    position: relative;
+    opacity: 1;
+    visibility: visible;
+    color: #1f2937;
 }
 
 .toast.success {
@@ -1705,7 +1708,7 @@ body {
     }
 }
 
-/* 哝应弝设�?*/
+/* 哝应弝设�?*/
 @media (max-width: 768px) {
     .nav-container {
         flex-direction: column;
@@ -1767,7 +1770,7 @@ body {
     }
 }
 
-/* 表坕标签选择�?*/
+/* 表坕标签选择�?*/
 .tag-selector {
     display: flex;
     flex-direction: column;
@@ -2151,7 +2154,7 @@ body {
     color: var(--primary-color);
 }
 
-/* 自定义下拉选择�?*/
+/* 自定义下拉选择�?*/
 .custom-select {
     position: relative;
     width: 100%;
@@ -2269,7 +2272,7 @@ body {
 }
 
 .custom-select-option.selected::before {
-    content: '�?;
+    content: '�?;
     font-weight: 700;
     font-size: 14px;
 }

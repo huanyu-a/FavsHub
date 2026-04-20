@@ -295,40 +295,86 @@
     background: rgba(0, 0, 0, 0.6);
 }
 
-[data-theme="dark"] .modal-content {
-    background: rgba(30, 35, 45, 0.98);
+/* 使用 .modal .modal-content 提高优先级覆盖 main-bundle.css */
+[data-theme="dark"] .modal .modal-content {
+    background: rgba(30, 35, 45, 0.98) !important;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary) !important;
 }
 
-[data-theme="dark"] .modal-header {
+[data-theme="dark"] .modal .modal-header {
     background: rgba(20, 25, 35, 0.8);
     border-bottom: 1px solid var(--border-color);
 }
 
-[data-theme="dark"] .modal-header h2 {
+[data-theme="dark"] .modal .modal-header h2 {
     color: var(--text-primary);
 }
 
-[data-theme="dark"] .modal-body {
+[data-theme="dark"] .modal .modal-body {
     color: var(--text-primary);
 }
 
-[data-theme="dark"] .form-label {
-    color: var(--text-primary);
+[data-theme="dark"] .modal .modal-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(20, 25, 35, 0.5);
 }
 
-[data-theme="dark"] .form-input,
-[data-theme="dark"] .form-textarea {
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
-}
-
-[data-theme="dark"] .form-input:focus,
-[data-theme="dark"] .form-textarea:focus {
+[data-theme="dark"] .modal .modal-close {
     background: rgba(255, 255, 255, 0.08);
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .modal .modal-close:hover {
+    background: var(--danger-color);
+    color: white;
+}
+
+/* 暗色模式 - 详情页 */
+[data-theme="dark"] .prompt-detail {
+    color: var(--text-primary);
+}
+
+[data-theme="dark"] .detail-meta {
+    gap: 10px;
+}
+
+[data-theme="dark"] .meta-item {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .meta-item i {
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .detail-tag {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .detail-description h4,
+[data-theme="dark"] .detail-content h4,
+[data-theme="dark"] .detail-versions h4 {
+    color: var(--text-primary);
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .detail-description p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+}
+
+[data-theme="dark"] .detail-content pre {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
 }
 
 /* 暗色模式 - 筛选栏 */
@@ -367,45 +413,50 @@
     color: var(--text-secondary);
 }
 
-/* 暗色模式 - 提示词详情页 */
-[data-theme="dark"] .prompt-detail {
+/* 暗色模式 - 表单 */
+[data-theme="dark"] .form-label {
     color: var(--text-primary);
 }
 
-[data-theme="dark"] .detail-meta {
-    gap: 10px;
-}
-
-[data-theme="dark"] .meta-item {
+[data-theme="dark"] .form-input,
+[data-theme="dark"] .form-textarea {
     background: rgba(255, 255, 255, 0.06);
-    color: var(--text-secondary);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-}
-
-[data-theme="dark"] .meta-item i {
-    color: var(--primary-color);
-}
-
-[data-theme="dark"] .detail-description h4,
-[data-theme="dark"] .detail-content h4,
-[data-theme="dark"] .detail-versions h4 {
+    border: 1px solid rgba(255, 255, 255, 0.1);
     color: var(--text-primary);
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 10px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-[data-theme="dark"] .detail-description p {
-    color: var(--text-secondary);
-    line-height: 1.6;
+[data-theme="dark"] .form-input:focus,
+[data-theme="dark"] .form-textarea:focus {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
 }
 
-[data-theme="dark"] .detail-content pre {
-    background: rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+[data-theme="dark"] .form-group label {
     color: var(--text-primary);
+}
+
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select,
+[data-theme="dark"] .form-group textarea {
+    background: rgba(255, 255, 255, 0.06) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: var(--text-primary) !important;
+}
+
+[data-theme="dark"] .form-group input::placeholder,
+[data-theme="dark"] .form-group textarea::placeholder {
+    color: var(--text-secondary);
+    opacity: 0.5;
+}
+
+[data-theme="dark"] .form-group input:focus,
+[data-theme="dark"] .form-group select:focus,
+[data-theme="dark"] .form-group textarea:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+    color: var(--text-primary) !important;
 }
 
 [data-theme="dark"] .detail-content pre::-webkit-scrollbar {
@@ -532,6 +583,22 @@
     color: var(--primary-color);
 }
 
+[data-theme="dark"] .compare-version .label {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .compare-version .value {
+    color: var(--primary-color);
+}
+
+[data-theme="dark"] .compare-version .time {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .compare-arrow {
+    color: var(--text-secondary);
+}
+
 [data-theme="dark"] .compare-stats-row {
     gap: 12px;
 }
@@ -555,8 +622,32 @@
     color: var(--text-secondary);
 }
 
+/* 统计信息栏 */
+[data-theme="dark"] .compare-stats {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .compare-stats .added {
+    background: rgba(52, 211, 153, 0.15);
+    color: #34D399;
+}
+
+[data-theme="dark"] .compare-stats .removed {
+    background: rgba(248, 113, 113, 0.15);
+    color: #F87171;
+}
+
+[data-theme="dark"] .compare-stats .same {
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-secondary);
+}
+
+/* 差异内容区域 */
 [data-theme="dark"] .compare-diff {
+    background: rgba(0, 0, 0, 0.3) !important;
     border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--text-primary);
 }
 
 [data-theme="dark"] .compare-diff pre {
@@ -564,8 +655,25 @@
     color: var(--text-primary);
 }
 
+/* 差异行 */
+[data-theme="dark"] .diff-container {
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+[data-theme="dark"] .diff-line {
+    border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+[data-theme="dark"] .diff-line .line-num {
+    color: var(--text-secondary);
+}
+
 [data-theme="dark"] .diff-line.added {
     background: rgba(52, 211, 153, 0.1);
+    color: #34D399;
+}
+
+[data-theme="dark"] .diff-line.added .line-sign {
     color: #34D399;
 }
 
@@ -574,7 +682,15 @@
     color: #F87171;
 }
 
+[data-theme="dark"] .diff-line.removed .line-sign {
+    color: #F87171;
+}
+
 [data-theme="dark"] .diff-line.same {
+    color: var(--text-secondary);
+}
+
+[data-theme="dark"] .diff-line.same .line-sign {
     color: var(--text-secondary);
 }
 
@@ -598,49 +714,49 @@
 }
 
 /* 暗色模式 - 版本详情模态框底部 */
-[data-theme="dark"] .version-footer {
+[data-theme="dark"] .modal .version-footer {
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(20, 25, 35, 0.5);
 }
 
-[data-theme="dark"] .version-footer .btn-secondary {
+[data-theme="dark"] .modal .version-footer .btn-secondary {
     background: rgba(255, 255, 255, 0.08);
     color: var(--text-primary);
     border-color: rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="dark"] .version-footer .btn-secondary:hover {
+[data-theme="dark"] .modal .version-footer .btn-secondary:hover {
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.15);
 }
 
 /* 暗色模式 - 模态框底部 */
-[data-theme="dark"] .modal-footer {
+[data-theme="dark"] .modal .modal-footer {
     border-top: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(20, 25, 35, 0.5);
 }
 
-[data-theme="dark"] .modal-footer .btn {
+[data-theme="dark"] .modal .modal-footer .btn {
     border: 1px solid transparent;
 }
 
-[data-theme="dark"] .modal-footer .btn-secondary {
+[data-theme="dark"] .modal .modal-footer .btn-secondary {
     background: rgba(255, 255, 255, 0.08);
     color: var(--text-primary);
     border-color: rgba(255, 255, 255, 0.1);
 }
 
-[data-theme="dark"] .modal-footer .btn-secondary:hover {
+[data-theme="dark"] .modal .modal-footer .btn-secondary:hover {
     background: rgba(255, 255, 255, 0.12);
     border-color: rgba(255, 255, 255, 0.15);
 }
 
-[data-theme="dark"] .modal-footer .btn-danger {
+[data-theme="dark"] .modal .modal-footer .btn-danger {
     background: var(--danger-color);
     box-shadow: 0 1px 2px rgba(248, 113, 113, 0.3);
 }
 
-[data-theme="dark"] .modal-footer .btn-danger:hover {
+[data-theme="dark"] .modal .modal-footer .btn-danger:hover {
     background: #EF4444;
     box-shadow: 0 2px 8px rgba(248, 113, 113, 0.4);
 }
@@ -655,38 +771,38 @@
 }
 
 /* 暗色模式 - 编辑模态框 */
-[data-theme="dark"] .form-group {
+[data-theme="dark"] .modal .form-group {
     margin-bottom: 16px;
 }
 
-[data-theme="dark"] .form-label {
+[data-theme="dark"] .modal .form-label {
     color: var(--text-primary);
     font-weight: 500;
 }
 
-[data-theme="dark"] .form-input,
-[data-theme="dark"] .form-textarea,
-[data-theme="dark"] .form-select {
-    background: rgba(255, 255, 255, 0.06);
+[data-theme="dark"] .modal .form-input,
+[data-theme="dark"] .modal .form-textarea,
+[data-theme="dark"] .modal .form-select {
+    background: rgba(255, 255, 255, 0.06) !important;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    color: var(--text-primary);
+    color: var(--text-primary) !important;
 }
 
-[data-theme="dark"] .form-input::placeholder,
-[data-theme="dark"] .form-textarea::placeholder {
+[data-theme="dark"] .modal .form-input::placeholder,
+[data-theme="dark"] .modal .form-textarea::placeholder {
     color: var(--text-secondary);
     opacity: 0.6;
 }
 
-[data-theme="dark"] .form-input:focus,
-[data-theme="dark"] .form-textarea:focus,
-[data-theme="dark"] .form-select:focus {
-    background: rgba(255, 255, 255, 0.08);
+[data-theme="dark"] .modal .form-input:focus,
+[data-theme="dark"] .modal .form-textarea:focus,
+[data-theme="dark"] .modal .form-select:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
     border-color: var(--primary-color);
     box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
 }
 
-[data-theme="dark"] .form-textarea {
+[data-theme="dark"] .modal .form-textarea {
     font-family: var(--font-mono);
     line-height: 1.6;
 }
@@ -881,7 +997,7 @@
 }
 
 /* 暗色模式 - 模态框标题 */
-[data-theme="dark"] .modal-header h2 {
+[data-theme="dark"] .modal .modal-header h2 {
     color: var(--text-primary);
 }
 
@@ -933,10 +1049,11 @@
 }
 
 /* 暗色模式 - Toast 提示 */
-[data-theme="dark"] .toast {
+[data-theme="dark"] .toast-container .toast {
     background: rgba(30, 35, 45, 0.98);
     border: 1px solid var(--border-color);
     box-shadow: var(--shadow-lg);
+    color: #e5e7eb;
 }
 
 /* 暗色模式 - 文件夹选择器（自定义下拉框） */

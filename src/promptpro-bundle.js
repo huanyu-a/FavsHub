@@ -359,7 +359,11 @@ window.PromptProDB = PromptProDB;
     toast.className = `toast ${type}`;
     toast.innerHTML = `<i class="${type === 'success' ? 'ri-check-line' : 'ri-error-warning-line'}"></i><span>${message}</span>`;
     container.appendChild(toast);
-    setTimeout(() => { toast.style.animation = 'slideIn 0.3s ease reverse'; setTimeout(() => toast.remove(), 300); }, 3000);
+    setTimeout(() => { 
+      toast.style.transition = 'opacity 0.3s ease';
+      toast.style.opacity = '0';
+      setTimeout(() => toast.remove(), 300); 
+    }, 3000);
   }
 
   function formatTimestamp(ts) { if (!ts) return '未知'; return new Date(ts).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' }); }
@@ -526,9 +530,23 @@ window.PromptProDB = PromptProDB;
 
   function bindPromptCardEvents(grid) {
     grid.querySelectorAll('.prompt-card').forEach(card => { card.addEventListener('click', (e) => { if (!e.target.closest('.btn-icon')) showPromptDetail(card.dataset.id); }); });
-    grid.querySelectorAll('.prompt-btn-copy').forEach(btn => { btn.addEventListener('click', async (e) => { e.stopPropagation(); const prompt = await PromptProDB.getPrompt(btn.dataset.id); if (prompt && prompt.content) { try { await navigator.clipboard.writeText(prompt.content); showToast('内容已复制到剪贴板'); } catch (error) { showToast('操作失败: ' + error.message, 'error'); } } }); });
-    grid.querySelectorAll('.prompt-btn-edit').forEach(btn => { btn.addEventListener('click', async (e) => { e.stopPropagation(); const prompt = await PromptProDB.getPrompt(btn.dataset.id); if (prompt) openEditModal(prompt); }); });
-    grid.querySelectorAll('.favorite-btn').forEach(btn => { btn.addEventListener('click', async (e) => { e.stopPropagation(); const result = await PromptProDB.toggleFavorite(btn.dataset.id); if (result) { showToast(result.is_favorite === 1 ? '已收藏' : '取消收藏'); await loadAll(); } }); });
+    grid.querySelectorAll('.copy-btn').forEach(btn => { btn.addEventListener('click', async (e) => { 
+      e.stopPropagation(); 
+      const promptId = btn.closest('.prompt-card').dataset.id;
+      const prompt = await PromptProDB.getPrompt(promptId); 
+      if (prompt && prompt.content) { 
+        try { 
+          await navigator.clipboard.writeText(prompt.content); 
+          showToast('内容已复制到剪贴板'); 
+        } catch (error) { 
+          showToast('操作失败: ' + error.message, 'error'); 
+        } 
+      } else {
+        showToast('没有可复制的内容', 'warning');
+      }
+    }); });
+    grid.querySelectorAll('.edit-btn').forEach(btn => { btn.addEventListener('click', async (e) => { e.stopPropagation(); const prompt = await PromptProDB.getPrompt(btn.closest('.prompt-card').dataset.id); if (prompt) openEditModal(prompt); }); });
+    grid.querySelectorAll('.fav-btn').forEach(btn => { btn.addEventListener('click', async (e) => { e.stopPropagation(); const result = await PromptProDB.toggleFavorite(btn.closest('.prompt-card').dataset.id); if (result) { showToast(result.is_favorite === 1 ? '已收藏' : '取消收藏'); await loadAll(); } }); });
   }
 
   async function showPromptDetail(promptId) {
