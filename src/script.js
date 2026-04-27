@@ -23,6 +23,7 @@ let bookmarkFolderContextMenu = null;
 let currentBookmarkFolder = null;
 let lastStorageWrite = 0;
 let pendingWrite = null;
+let sidebarSortableInstances = [];
 const STORAGE_WRITE_INTERVAL = 1000; // 1秒的节流间隔
 // 在文件顶部添加导入语句
 import { ICONS } from './icons.js';
@@ -164,6 +165,131 @@ function createQRCode(url, bookmarkName) {
   });
 }
 
+// 递归收集所有文件夹
+function getAllFolders(nodes, level = 0) {
+  let folders = [];
+  nodes.forEach(function (node) {
+    if (node.children && !node.url) {
+      folders.push({ id: node.id, title: node.title, level: level });
+      folders = folders.concat(getAllFolders(node.children, level + 1));
+    }
+  });
+  return folders;
+}
+
+function closeEditCategoryDropdown() {
+  const trigger = document.querySelector('#edit-dialog .edit-category-select-trigger');
+  const dropdown = document.querySelector('#edit-dialog .edit-category-select-dropdown');
+  if (!trigger || !dropdown) return;
+  trigger.classList.remove('open');
+  dropdown.classList.remove('open');
+}
+
+function syncEditCategoryCustomSelect() {
+  const select = document.getElementById('edit-category');
+  const wrapper = document.getElementById('edit-category-select-wrapper');
+  if (!select || !wrapper) return;
+
+  const triggerText = wrapper.querySelector('.edit-category-select-text');
+  const dropdown = wrapper.querySelector('.edit-category-select-dropdown');
+  if (!triggerText || !dropdown) return;
+
+  dropdown.innerHTML = '';
+
+  Array.from(select.options).forEach((option) => {
+    const optionEl = document.createElement('button');
+    optionEl.type = 'button';
+    optionEl.className = 'edit-category-select-option';
+    optionEl.dataset.value = option.value;
+
+    const level = Number(option.dataset.level || 0);
+    optionEl.style.paddingLeft = `${12 + (level * 18)}px`;
+
+    if (option.selected) {
+      optionEl.classList.add('selected');
+      triggerText.textContent = option.textContent.trim();
+      triggerText.classList.remove('placeholder');
+    }
+
+    const label = document.createElement('span');
+    label.className = 'edit-category-select-option-label';
+    label.textContent = option.textContent.trim();
+    optionEl.appendChild(label);
+
+    optionEl.addEventListener('click', () => {
+      select.value = option.value;
+      Array.from(select.options).forEach((selectOption) => {
+        selectOption.selected = selectOption.value === option.value;
+      });
+      syncEditCategoryCustomSelect();
+      closeEditCategoryDropdown();
+    });
+
+    dropdown.appendChild(optionEl);
+  });
+
+  if (!select.value && select.options.length > 0) {
+    select.options[0].selected = true;
+    triggerText.textContent = select.options[0].textContent.trim();
+    triggerText.classList.remove('placeholder');
+  }
+}
+
+function initEditCategoryCustomSelect() {
+  const select = document.getElementById('edit-category');
+  if (!select || document.getElementById('edit-category-select-wrapper')) return;
+
+  const wrapper = document.createElement('div');
+  wrapper.id = 'edit-category-select-wrapper';
+  wrapper.className = 'edit-category-select';
+
+  const trigger = document.createElement('button');
+  trigger.type = 'button';
+  trigger.className = 'edit-category-select-trigger';
+  trigger.setAttribute('aria-haspopup', 'listbox');
+  trigger.setAttribute('aria-expanded', 'false');
+
+  const triggerText = document.createElement('span');
+  triggerText.className = 'edit-category-select-text placeholder';
+  triggerText.textContent = '选择分类';
+
+  const arrow = document.createElement('span');
+  arrow.className = 'edit-category-select-arrow';
+  arrow.innerHTML = ICONS.expand_less;
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'edit-category-select-dropdown';
+
+  trigger.appendChild(triggerText);
+  trigger.appendChild(arrow);
+  wrapper.appendChild(trigger);
+  wrapper.appendChild(dropdown);
+  select.insertAdjacentElement('afterend', wrapper);
+
+  trigger.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const isOpen = trigger.classList.contains('open');
+    closeEditCategoryDropdown();
+    if (!isOpen) {
+      trigger.classList.add('open');
+      dropdown.classList.add('open');
+      trigger.setAttribute('aria-expanded', 'true');
+    } else {
+      trigger.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    if (!wrapper.contains(event.target)) {
+      trigger.setAttribute('aria-expanded', 'false');
+      closeEditCategoryDropdown();
+    }
+  });
+
+  syncEditCategoryCustomSelect();
+}
+
 // 编辑书签对话框函数
 function openEditDialog(bookmark) {
   const bookmarkId = bookmark.id;
@@ -173,6 +299,25 @@ function openEditDialog(bookmark) {
   document.getElementById('edit-name').value = bookmarkTitle;
   document.getElementById('edit-url').value = bookmarkUrl;
 
+  // 填充分类下拉
+  const categorySelect = document.getElementById('edit-category');
+  categorySelect.innerHTML = '';
+  const allFolders = getAllFolders(bookmarkTreeNodes);
+  allFolders.forEach(function (folder) {
+    const option = document.createElement('option');
+    option.value = folder.id;
+    option.dataset.level = folder.level;
+    const indent = '    '.repeat(folder.level);
+    option.textContent = indent + folder.title;
+    if (folder.id === bookmark.parentId) {
+      option.selected = true;
+    }
+    categorySelect.appendChild(option);
+  });
+
+  initEditCategoryCustomSelect();
+  syncEditCategoryCustomSelect();
+
   const editDialog = document.getElementById('edit-dialog');
   editDialog.style.display = 'block';
 
@@ -181,12 +326,25 @@ function openEditDialog(bookmark) {
     event.preventDefault();
     const newTitle = document.getElementById('edit-name').value;
     const newUrl = document.getElementById('edit-url').value;
-    chrome.bookmarks.update(bookmarkId, { title: newTitle, url: newUrl }, function () {
-      editDialog.style.display = 'none';
+    const newParentId = document.getElementById('edit-category').value;
+    const oldParentId = bookmark.parentId;
 
-      // 更新特定的书签卡片
-      updateSpecificBookmarkCard(bookmarkId, newTitle, newUrl);
-    });
+    function doUpdate() {
+      chrome.bookmarks.update(bookmarkId, { title: newTitle, url: newUrl }, function () {
+        editDialog.style.display = 'none';
+        updateSpecificBookmarkCard(bookmarkId, newTitle, newUrl);
+      });
+    }
+
+    // 如果分类有变更，先将书签移动到新目录，再更新标题和URL
+    if (newParentId !== oldParentId) {
+      chrome.bookmarks.move(bookmarkId, { parentId: newParentId }, function () {
+        updateBookmarksDisplay(oldParentId);
+        doUpdate();
+      });
+    } else {
+      doUpdate();
+    }
   };
 
   // 添加取消按钮的事件监听
@@ -1043,7 +1201,10 @@ document.addEventListener('DOMContentLoaded', function () {
     // 更新 DOM
     bookmarksList.innerHTML = '';
     bookmarksList.appendChild(fragment);
-    
+
+    // 重新初始化拖拽排序
+    initBookmarkSortable();
+
     // 更新分页信息
     updatePagination(pageIndex, Math.ceil(cachedData.totalCount / pageSize));
   }
@@ -1198,6 +1359,12 @@ function showErrorFeedback(element) {
   setTimeout(() => {
     element.style.backgroundColor = '';
   }, 1000);
+}
+
+function getDraggedFolderSublist(folderElement) {
+  if (!folderElement) return null;
+  const sublist = folderElement.nextElementSibling;
+  return sublist && sublist.tagName === 'UL' ? sublist : null;
 }
 
 function openCategory(category) {
@@ -1971,6 +2138,8 @@ function createBookmarkCard(bookmark, index) {
     e.preventDefault();
     e.stopPropagation();
 
+    if (window._dragJustEnded || window._isDragging) return;
+
     if (isProcessingClick) return;
     isProcessingClick = true;
 
@@ -2213,6 +2382,7 @@ function showContextMenu(event, item, type = 'bookmark') {
     id: item.id || item.dataset?.id,
     title: item.title || item.querySelector?.('.card-title')?.textContent || item.querySelector?.('span')?.textContent,
     url: item.url || item.dataset?.url,
+    parentId: item.parentId || item.dataset?.parentId,
     type: item.type || type  // 优先使用项目自带的类型，否则使用传入的类型
   };
 
@@ -2764,6 +2934,7 @@ function createFolderCard(folder, index) {
 
   // Add click event handler to display folder contents
   card.addEventListener('click', function() {
+    if (window._dragJustEnded || window._isDragging) return;
     updateBookmarksDisplay(folder.id);
     updateFolderName(folder.id);
   });
@@ -2850,85 +3021,239 @@ function createFolderCard(folder, index) {
   return card;
 }
 
-function setupSortable() {
+function initBookmarkSortable() {
   const bookmarksList = document.getElementById('bookmarks-list');
-  if (bookmarksList) {
-    new Sortable(bookmarksList, {
-      animation: 150,
-      onEnd: function (evt) {
-        const itemId = evt.item.dataset.id;
-        const newParentId = bookmarksList.dataset.parentId;
-        const newIndex = evt.newIndex;
+  if (!bookmarksList) return;
 
-        showMovingFeedback(evt.item);
-
-        moveBookmark(itemId, newParentId, newIndex)
-          .then(() => {
-            hideMovingFeedback(evt.item);
-            showSuccessFeedback(evt.item);
-          })
-          .catch(error => {
-            console.error('Error moving bookmark:', error);
-            hideMovingFeedback(evt.item);
-            showErrorFeedback(evt.item);
-            syncBookmarkOrder(newParentId);
-          });
+  // 扁平布局：卡片在 .folder-bookmarks-grid 里，需要在每个 grid 上挂 Sortable
+  const grids = bookmarksList.querySelectorAll('.folder-bookmarks-grid');
+  if (grids.length > 0) {
+    grids.forEach(function (grid) {
+      if (grid.sortable) {
+        grid.sortable.destroy();
       }
+      new Sortable(grid, {
+        group: {
+          name: 'flat-sort',
+          pull: false,
+          put: false
+        },
+        animation: 150,
+        forceFallback: true,
+        fallbackOnBody: true,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        dragClass: 'sortable-drag',
+        onStart: function () {
+          window._isDragging = true;
+          document.body.classList.add('is-sorting-bookmarks');
+        },
+        onEnd: function (evt) {
+          window._isDragging = false;
+          document.body.classList.remove('is-sorting-bookmarks');
+          window._dragJustEnded = true;
+          setTimeout(function () { window._dragJustEnded = false; }, 200);
+          const itemId = evt.item.dataset.id;
+          const newIndex = evt.newIndex;
+          const oldIndex = evt.oldIndex;
+
+          if (oldIndex === newIndex && evt.from === evt.to) return;
+
+          showMovingFeedback(evt.item);
+
+          var newParentId;
+          if (evt.to === grid) {
+            var groupEl = grid.closest('.folder-group');
+            if (groupEl) {
+              newParentId = groupEl.id.replace('folder-group-', '').replace('-recommended', '');
+            }
+          } else {
+            var otherGroup = evt.to.closest('.folder-group');
+            if (otherGroup) {
+              newParentId = otherGroup.id.replace('folder-group-', '').replace('-recommended', '');
+            }
+          }
+          if (!newParentId) {
+            newParentId = evt.item.dataset.parentId;
+          }
+
+          moveBookmark(itemId, newParentId, newIndex, oldIndex, evt.item.dataset.parentId)
+            .then(function () {
+              hideMovingFeedback(evt.item);
+              showSuccessFeedback(evt.item);
+            })
+            .catch(function () {
+              hideMovingFeedback(evt.item);
+              showErrorFeedback(evt.item);
+            });
+        }
+      });
     });
-  } else {
-    console.error('Bookmarks list element not found');
+    return;
   }
+
+  // 直接模式：卡片直接是 #bookmarks-list 的子元素
+  if (bookmarksList.sortable) {
+    bookmarksList.sortable.destroy();
+  }
+
+  new Sortable(bookmarksList, {
+    animation: 150,
+    forceFallback: true,
+    fallbackOnBody: true,
+    ghostClass: 'sortable-ghost',
+    chosenClass: 'sortable-chosen',
+    dragClass: 'sortable-drag',
+    onStart: function () {
+      window._isDragging = true;
+      document.body.classList.add('is-sorting-bookmarks');
+    },
+    onEnd: function (evt) {
+      window._isDragging = false;
+      document.body.classList.remove('is-sorting-bookmarks');
+      window._dragJustEnded = true;
+      setTimeout(function () { window._dragJustEnded = false; }, 200);
+
+      var itemId = evt.item.dataset.id;
+      var newIndex = evt.newIndex;
+      var oldIndex = evt.oldIndex;
+
+      if (oldIndex === newIndex) return;
+
+      showMovingFeedback(evt.item);
+
+      var parentId = bookmarksList.dataset.parentId;
+      moveBookmark(itemId, parentId, newIndex, oldIndex, parentId).then(function () {
+        hideMovingFeedback(evt.item);
+        showSuccessFeedback(evt.item);
+      }).catch(function () {
+        hideMovingFeedback(evt.item);
+        showErrorFeedback(evt.item);
+        if (parentId) syncBookmarkOrder(parentId);
+      });
+    }
+  });
+}
+
+function setupSortable() {
+  sidebarSortableInstances.forEach(instance => instance.destroy());
+  sidebarSortableInstances = [];
+
+  initBookmarkSortable();
 
   const categoriesList = document.getElementById('categories-list');
   if (categoriesList) {
-    new Sortable(categoriesList, {
+    const rootSortable = new Sortable(categoriesList, {
+      draggable: '.folder-item',
       animation: 150,
       group: 'nested',
+      forceFallback: true,
       fallbackOnBody: true,
       swapThreshold: 0.65,
-      onStart: function (evt) {
+      onStart: function () {
+        window._isDragging = true;
+      },
+      onChoose: function (evt) {
+        const sublist = getDraggedFolderSublist(evt.item);
+        if (sublist) {
+          evt.item._dragSublist = sublist;
+          evt.item._dragSublistDisplay = sublist.style.display;
+          sublist.style.display = 'none';
+        }
       },
       onEnd: function (evt) {
+        window._isDragging = false;
+        window._dragJustEnded = true;
+        setTimeout(function () { window._dragJustEnded = false; }, 200);
+
         const itemEl = evt.item;
         const newIndex = evt.newIndex;
         const bookmarkId = itemEl.dataset.id;
         const newParentId = evt.to.closest('li') ? evt.to.closest('li').dataset.id : '1';
+        const draggedSublist = itemEl._dragSublist;
+        const draggedSublistDisplay = itemEl._dragSublistDisplay;
 
         if (evt.oldIndex !== evt.newIndex || evt.from !== evt.to) {
-          moveBookmark(bookmarkId, newParentId, newIndex);
+          moveBookmark(bookmarkId, newParentId, newIndex)
+            .then(() => {
+              initSidebarNavigation();
+            })
+            .catch(() => {
+              initSidebarNavigation();
+            });
+        } else if (draggedSublist) {
+          draggedSublist.style.display = draggedSublistDisplay || '';
         }
+
+        delete itemEl._dragSublist;
+        delete itemEl._dragSublistDisplay;
       }
     });
+    sidebarSortableInstances.push(rootSortable);
 
     const folders = categoriesList.querySelectorAll('li ul');
     folders.forEach((folder, index) => {
-      new Sortable(folder, {
+      const nestedSortable = new Sortable(folder, {
+        draggable: '.folder-item',
         group: 'nested',
         animation: 150,
+        forceFallback: true,
         fallbackOnBody: true,
         swapThreshold: 0.65,
-        onStart: function (evt) {
+        onStart: function () {
+          window._isDragging = true;
+        },
+        onChoose: function (evt) {
+          const sublist = getDraggedFolderSublist(evt.item);
+          if (sublist) {
+            evt.item._dragSublist = sublist;
+            evt.item._dragSublistDisplay = sublist.style.display;
+            sublist.style.display = 'none';
+          }
         },
         onEnd: function (evt) {
+          window._isDragging = false;
+          window._dragJustEnded = true;
+          setTimeout(function () { window._dragJustEnded = false; }, 200);
+
           const itemEl = evt.item;
           const newIndex = evt.newIndex;
           const bookmarkId = itemEl.dataset.id;
           const newParentId = evt.to.closest('li') ? evt.to.closest('li').dataset.id : '1';
+          const draggedSublist = itemEl._dragSublist;
+          const draggedSublistDisplay = itemEl._dragSublistDisplay;
 
           if (evt.oldIndex !== evt.newIndex || evt.from !== evt.to) {
-            moveBookmark(bookmarkId, newParentId, newIndex);
+            moveBookmark(bookmarkId, newParentId, newIndex)
+              .then(() => {
+                initSidebarNavigation();
+              })
+              .catch(() => {
+                initSidebarNavigation();
+              });
+          } else if (draggedSublist) {
+            draggedSublist.style.display = draggedSublistDisplay || '';
           }
+
+          delete itemEl._dragSublist;
+          delete itemEl._dragSublistDisplay;
         }
       });
+      sidebarSortableInstances.push(nestedSortable);
     });
   } else {
     console.error('Categories list element not found');
   }
 }
 
-function moveBookmark(itemId, newParentId, newIndex) {
+function moveBookmark(itemId, newParentId, newIndex, oldIndex = null, oldParentId = null) {
   return new Promise((resolve, reject) => {
-    chrome.bookmarks.move(itemId, { index: newIndex }, (result) => {
+    const destination = { index: newIndex };
+    if (newParentId) destination.parentId = newParentId;
+    if (oldParentId && newParentId === oldParentId && oldIndex !== null && oldIndex < newIndex) {
+      destination.index = newIndex + 1;
+    }
+    chrome.bookmarks.move(itemId, destination, (result) => {
       if (chrome.runtime.lastError) {
         console.error('Error moving bookmark:', chrome.runtime.lastError);
         reject(chrome.runtime.lastError);
@@ -2945,9 +3270,7 @@ function moveBookmark(itemId, newParentId, newIndex) {
 
 function updateAffectedBookmarks(parentId, movedItemId, newIndex) {
   return new Promise((resolve, reject) => {
-    const bookmarksList = document.getElementById('bookmarks-list');
-    const bookmarkElements = Array.from(bookmarksList.children);
-    const movedElement = bookmarksList.querySelector(`[data-id="${movedItemId}"]`);
+    const movedElement = document.querySelector(`.bookmark-card[data-id="${movedItemId}"], .bookmark-folder[data-id="${movedItemId}"]`);
     
     if (!movedElement) {
       console.error('Moved element not found');
@@ -2955,28 +3278,50 @@ function updateAffectedBookmarks(parentId, movedItemId, newIndex) {
       return;
     }
 
+    const container = movedElement.parentElement;
+    if (!container) {
+      reject(new Error('Moved element container not found'));
+      return;
+    }
+
+    const bookmarkElements = Array.from(container.children).filter((element) => {
+      return element.classList.contains('bookmark-card') || element.classList.contains('bookmark-folder');
+    });
     const oldIndex = bookmarkElements.indexOf(movedElement);
     
-    // 如置没有变化，不需要更新
+    if (oldIndex === -1) {
+      reject(new Error('Moved element index not found'));
+      return;
+    }
+
+    movedElement.dataset.parentId = parentId;
+
+    // 位置没有变化，不需要额外移动 DOM
     if (oldIndex === newIndex) {
+      bookmarkElements.forEach((element, index) => {
+        element.dataset.index = index.toString();
+      });
+      bookmarkOrderCache[parentId] = bookmarkElements.map(el => el.dataset.id);
       resolve();
       return;
     }
 
-    // 移动元素到新位置
+    // 移动元素到当前容器中的正确位置
     if (newIndex >= bookmarkElements.length) {
-      bookmarksList.appendChild(movedElement);
+      container.appendChild(movedElement);
     } else {
-      bookmarksList.insertBefore(movedElement, bookmarksList.children[newIndex]);
+      container.insertBefore(movedElement, bookmarkElements[newIndex]);
     }
 
-    // 更新所有书签的索引
-    bookmarkElements.forEach((element, index) => {
+    Array.from(container.children).forEach((element, index) => {
+      if (element.classList.contains('bookmark-card') || element.classList.contains('bookmark-folder')) {
       element.dataset.index = index.toString();
+      }
     });
 
-    // 更新本地缓存
-    bookmarkOrderCache[parentId] = bookmarkElements.map(el => el.dataset.id);
+    bookmarkOrderCache[parentId] = Array.from(container.children)
+      .filter((element) => element.classList.contains('bookmark-card') || element.classList.contains('bookmark-folder'))
+      .map(el => el.dataset.id);
 
     highlightBookmark(movedItemId);
     resolve();
@@ -3099,7 +3444,9 @@ function displayBookmarkCategories(bookmarkNodes, level, parentUl, parentId) {
     }
   });
 
-  setupSortable();
+  if (!parentUl) {
+    setupSortable();
+  }
 }
 
 // 添加一个获取文件夹内书签数量的函数
@@ -3411,8 +3758,8 @@ function showFolder(folderId) {
   if (sidebarFolderElement) {
     sidebarFolderElement.style.display = '';
     // 如果文夹之前是展开的，显示其子列表
-    const sublist = sidebarFolderElement.nextElementSibling;
-    if (sublist && sublist.tagName === 'UL') {
+    const sublist = getDraggedFolderSublist(sidebarFolderElement);
+    if (sublist) {
       sublist.style.display = '';
 
     }
@@ -3516,7 +3863,7 @@ function startPeriodicSync() {
 let isRequestPending = false;
 
 function setupSpecialLinks() {
-  const specialLinks = document.querySelectorAll('.links-icons a, .settings-icon a');
+  const specialLinks = document.querySelectorAll('.links-icons a, .settings-icon a, .sidebar-toolbar a');
   let isProcessingClick = false;
 
   specialLinks.forEach(link => {
@@ -4340,6 +4687,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   new Sortable(tabsContainer, {
     animation: 150,
+    forceFallback: true,
+    fallbackOnBody: true,
     onEnd: function (evt) {
       const orderedEngines = Array.from(tabsContainer.children).map(tab => tab.getAttribute('data-engine'));
       localStorage.setItem('orderedSearchEngines', JSON.stringify(orderedEngines));
@@ -4946,6 +5295,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   new Sortable(tabsContainer, {
     animation: 150,
+    forceFallback: true,
+    fallbackOnBody: true,
     onEnd: function (evt) {
       const orderedEngines = Array.from(tabsContainer.children).map(tab => tab.getAttribute('data-engine'));
       localStorage.setItem('orderedSearchEngines', JSON.stringify(orderedEngines));

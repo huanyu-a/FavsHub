@@ -768,5 +768,9 @@
     "presetWallpaperTitle": {
         "message": "Fondos predefinidos",
         "description": "Título para los fondos de pantalla predefinidos"
+    },
+    "categoryLabel": {
+        "message": "Categoría",
+        "description": "Etiqueta del selector de categoría en el diálogo de edición"
     }
 }

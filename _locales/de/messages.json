@@ -796,5 +796,9 @@
     "presetWallpaperTitle": {
         "message": "Voreingestellte Hintergrundbilder",
         "description": "Titel für voreingestellte Hintergrundbilder"
+    },
+    "categoryLabel": {
+        "message": "Kategorie",
+        "description": "Beschriftung der Kategorieauswahl im Bearbeitungsdialog"
     }
 }

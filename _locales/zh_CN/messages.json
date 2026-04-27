@@ -1,6 +1,6 @@
 {
     "extName": {
-        "message": "标签导航",
+        "message": "FavsHub·标签导航",
         "description": "扩展的名称"
     },
     "extDescription": {
@@ -957,5 +957,9 @@
     "bingWallpapersTitle": {
         "message": "必应壁纸",
         "description": "必应壁纸标题"
+    },
+    "categoryLabel": {
+        "message": "分类",
+        "description": "编辑对话框中目录（分类）下拉标签"
     }
 }

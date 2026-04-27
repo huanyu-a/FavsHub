@@ -887,5 +887,9 @@
     "presetWallpaperTitle": {
         "message": "預設桌布",
         "description": "預設桌布設定標題"
+    },
+    "categoryLabel": {
+        "message": "分類",
+        "description": "編輯對話框中目錄（分類）下拉標籤"
     }
 }

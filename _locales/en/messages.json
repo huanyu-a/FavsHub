@@ -870,5 +870,9 @@
     "presetWallpaperTitle": {
         "message": "Preset Wallpapers",
         "description": "Title for preset wallpaper settings"
+    },
+    "categoryLabel": {
+        "message": "Category",
+        "description": "Label for the folder/category dropdown in the edit dialog"
     }
 }

@@ -843,5 +843,9 @@
     "presetWallpaperTitle": {
         "message": "プリセット壁紙",
         "description": "プリセット壁紙設定のタイトル"
+    },
+    "categoryLabel": {
+        "message": "カテゴリ",
+        "description": "編集ダイアログのカテゴリ選択ラベル"
     }
 }

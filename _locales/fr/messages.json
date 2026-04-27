@@ -750,5 +750,9 @@
     "presetWallpaperTitle": {
         "message": "Fonds d'écran prédéfinis",
         "description": "Titre pour les fonds d'écran prédéfinis"
+    },
+    "categoryLabel": {
+        "message": "Catégorie",
+        "description": "Libellé du sélecteur de catégorie dans la boîte de dialogue d'édition"
     }
 }

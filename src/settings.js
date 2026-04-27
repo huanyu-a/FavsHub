@@ -104,17 +104,21 @@ class SettingsManager {
   }
 
   initEventListeners() {
-    // 打开设置侧边栏
-    this.settingsIcon.addEventListener('click', (e) => {
-      e.preventDefault();
-      this.openSettingsSidebar();
+    // 打开设置侧边栏 - 同时支持旧版 .settings-icon a 和新版侧边栏 #settings-link
+    const settingsTriggers = document.querySelectorAll('.settings-icon a, #settings-link');
+    settingsTriggers.forEach(trigger => {
+      trigger.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        this.openSettingsSidebar();
+      });
     });
 
     // 关闭设置侧边栏
     if (this.closeButton) {
       this.closeButton.addEventListener('click', () => {
         this.closeSettingsSidebar();
-        
+
         // 关闭侧边栏时更新欢迎消息
         if (window.WelcomeManager) {
           window.WelcomeManager.updateWelcomeMessage();
@@ -143,7 +147,7 @@ class SettingsManager {
         });
       });
     }
-    
+
     // 添加键盘事件监听，按ESC关闭侧边栏
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' && this.settingsSidebar && this.settingsSidebar.classList.contains('open')) {
@@ -153,32 +157,37 @@ class SettingsManager {
 
     // 添加点击侧边栏外部关闭功能
     document.addEventListener('click', (e) => {
-      // 如果侧边栏已打开，且点击的不是侧边栏内部元素
-      if (this.settingsSidebar && 
-          this.settingsSidebar.classList.contains('open') && 
-          !this.settingsSidebar.contains(e.target) && 
-          !this.settingsIcon.contains(e.target)) {
+      // 如果侧边栏已打开，且点击的不是侧边栏内部元素，也不是设置触发器
+      const clickedTrigger = e.target.closest('.settings-icon a, #settings-link');
+      if (this.settingsSidebar &&
+          this.settingsSidebar.classList.contains('open') &&
+          !this.settingsSidebar.contains(e.target) &&
+          !clickedTrigger) {
         this.closeSettingsSidebar();
-        
+
         // 关闭侧边栏时更新欢迎消息
         if (window.WelcomeManager) {
           window.WelcomeManager.updateWelcomeMessage();
         }
       }
     });
-    
+
     // 阻止侧边栏内部点击事件冒泡到文档
-    this.settingsSidebar.addEventListener('click', (e) => {
-      // 如果点击的是链接，不阻止事件冒泡
-      if (e.target.tagName === 'A' || e.target.closest('a')) {
-        return; // 允许链接点击事件正常传播
-      }
-      e.stopPropagation();
-    });
-    
-    // 阻止设置图标点击事件冒泡到文档
-    this.settingsIcon.addEventListener('click', (e) => {
-      e.stopPropagation();
+    if (this.settingsSidebar) {
+      this.settingsSidebar.addEventListener('click', (e) => {
+        // 如果点击的是链接，不阻止事件冒泡
+        if (e.target.tagName === 'A' || e.target.closest('a')) {
+          return; // 允许链接点击事件正常传播
+        }
+        e.stopPropagation();
+      });
+    }
+
+    // 阻止设置触发器点击事件冒泡到文档
+    settingsTriggers.forEach(trigger => {
+      trigger.addEventListener('click', (e) => {
+        e.stopPropagation();
+      });
     });
   }
 
@@ -190,6 +199,7 @@ class SettingsManager {
     if (this.settingsOverlay) {
       this.settingsOverlay.classList.add('active');
     }
+    document.body.style.overflow = 'hidden';
   }
 
   // 关闭设置侧边栏
@@ -426,19 +436,17 @@ class SettingsManager {
   }
 
   updateThemeIcon(isDark) {
+    // 更新旧版主题按钮（如果存在）
     const themeToggleBtn = document.getElementById('theme-toggle-btn');
-    if (!themeToggleBtn) return;
+    if (themeToggleBtn) {
+      themeToggleBtn.innerHTML = isDark ? ICONS.dark_mode : ICONS.light_mode;
+    }
 
-    themeToggleBtn.innerHTML = isDark ? ICONS.dark_mode : ICONS.light_mode;
-
-    // 同时更新导航栏主题按钮图标
+    // 更新侧边栏主题按钮图标（使用 SVG 模式）
     const navThemeBtn = document.getElementById('navThemeBtn');
     if (navThemeBtn) {
-      const icon = navThemeBtn.querySelector('i');
-      if (icon) {
-        icon.className = isDark ? 'ri-moon-line' : 'ri-sun-line';
-        navThemeBtn.title = isDark ? '切换到浅色模式' : '切换到深色模式';
-      }
+      navThemeBtn.innerHTML = isDark ? ICONS.dark_mode : ICONS.light_mode;
+      navThemeBtn.title = isDark ? '切换到浅色模式' : '切换到深色模式';
     }
   }
 

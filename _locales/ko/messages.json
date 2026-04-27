@@ -843,5 +843,9 @@
     "presetWallpaperTitle": {
         "message": "프리셋 배경화면",
         "description": "프리셋 배경화면 설정 제목"
+    },
+    "categoryLabel": {
+        "message": "카테고리",
+        "description": "편집 대화상자의 카테고리 선택 라벨"
     }
 }
