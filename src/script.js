@@ -3039,11 +3039,6 @@ function initBookmarkSortable() {
           put: false
         },
         animation: 150,
-        forceFallback: true,
-        fallbackOnBody: true,
-        ghostClass: 'sortable-ghost',
-        chosenClass: 'sortable-chosen',
-        dragClass: 'sortable-drag',
         onStart: function () {
           window._isDragging = true;
           document.body.classList.add('is-sorting-bookmarks');
@@ -3051,13 +3046,13 @@ function initBookmarkSortable() {
         onEnd: function (evt) {
           window._isDragging = false;
           document.body.classList.remove('is-sorting-bookmarks');
-          window._dragJustEnded = true;
-          setTimeout(function () { window._dragJustEnded = false; }, 200);
           const itemId = evt.item.dataset.id;
           const newIndex = evt.newIndex;
           const oldIndex = evt.oldIndex;
 
           if (oldIndex === newIndex && evt.from === evt.to) return;
+          window._dragJustEnded = true;
+          setTimeout(function () { window._dragJustEnded = false; }, 200);
 
           showMovingFeedback(evt.item);
 
@@ -3099,11 +3094,6 @@ function initBookmarkSortable() {
 
   new Sortable(bookmarksList, {
     animation: 150,
-    forceFallback: true,
-    fallbackOnBody: true,
-    ghostClass: 'sortable-ghost',
-    chosenClass: 'sortable-chosen',
-    dragClass: 'sortable-drag',
     onStart: function () {
       window._isDragging = true;
       document.body.classList.add('is-sorting-bookmarks');
@@ -3111,14 +3101,14 @@ function initBookmarkSortable() {
     onEnd: function (evt) {
       window._isDragging = false;
       document.body.classList.remove('is-sorting-bookmarks');
-      window._dragJustEnded = true;
-      setTimeout(function () { window._dragJustEnded = false; }, 200);
 
       var itemId = evt.item.dataset.id;
       var newIndex = evt.newIndex;
       var oldIndex = evt.oldIndex;
 
       if (oldIndex === newIndex) return;
+      window._dragJustEnded = true;
+      setTimeout(function () { window._dragJustEnded = false; }, 200);
 
       showMovingFeedback(evt.item);
 
@@ -3147,33 +3137,21 @@ function setupSortable() {
       draggable: '.folder-item',
       animation: 150,
       group: 'nested',
-      forceFallback: true,
-      fallbackOnBody: true,
       swapThreshold: 0.65,
       onStart: function () {
         window._isDragging = true;
       },
-      onChoose: function (evt) {
-        const sublist = getDraggedFolderSublist(evt.item);
-        if (sublist) {
-          evt.item._dragSublist = sublist;
-          evt.item._dragSublistDisplay = sublist.style.display;
-          sublist.style.display = 'none';
-        }
-      },
       onEnd: function (evt) {
         window._isDragging = false;
-        window._dragJustEnded = true;
-        setTimeout(function () { window._dragJustEnded = false; }, 200);
 
         const itemEl = evt.item;
         const newIndex = evt.newIndex;
         const bookmarkId = itemEl.dataset.id;
         const newParentId = evt.to.closest('li') ? evt.to.closest('li').dataset.id : '1';
-        const draggedSublist = itemEl._dragSublist;
-        const draggedSublistDisplay = itemEl._dragSublistDisplay;
 
         if (evt.oldIndex !== evt.newIndex || evt.from !== evt.to) {
+          window._dragJustEnded = true;
+          setTimeout(function () { window._dragJustEnded = false; }, 200);
           moveBookmark(bookmarkId, newParentId, newIndex)
             .then(() => {
               initSidebarNavigation();
@@ -3181,12 +3159,7 @@ function setupSortable() {
             .catch(() => {
               initSidebarNavigation();
             });
-        } else if (draggedSublist) {
-          draggedSublist.style.display = draggedSublistDisplay || '';
         }
-
-        delete itemEl._dragSublist;
-        delete itemEl._dragSublistDisplay;
       }
     });
     sidebarSortableInstances.push(rootSortable);
@@ -3197,33 +3170,21 @@ function setupSortable() {
         draggable: '.folder-item',
         group: 'nested',
         animation: 150,
-        forceFallback: true,
-        fallbackOnBody: true,
         swapThreshold: 0.65,
         onStart: function () {
           window._isDragging = true;
         },
-        onChoose: function (evt) {
-          const sublist = getDraggedFolderSublist(evt.item);
-          if (sublist) {
-            evt.item._dragSublist = sublist;
-            evt.item._dragSublistDisplay = sublist.style.display;
-            sublist.style.display = 'none';
-          }
-        },
         onEnd: function (evt) {
           window._isDragging = false;
-          window._dragJustEnded = true;
-          setTimeout(function () { window._dragJustEnded = false; }, 200);
 
           const itemEl = evt.item;
           const newIndex = evt.newIndex;
           const bookmarkId = itemEl.dataset.id;
           const newParentId = evt.to.closest('li') ? evt.to.closest('li').dataset.id : '1';
-          const draggedSublist = itemEl._dragSublist;
-          const draggedSublistDisplay = itemEl._dragSublistDisplay;
 
           if (evt.oldIndex !== evt.newIndex || evt.from !== evt.to) {
+            window._dragJustEnded = true;
+            setTimeout(function () { window._dragJustEnded = false; }, 200);
             moveBookmark(bookmarkId, newParentId, newIndex)
               .then(() => {
                 initSidebarNavigation();
@@ -3231,12 +3192,7 @@ function setupSortable() {
               .catch(() => {
                 initSidebarNavigation();
               });
-          } else if (draggedSublist) {
-            draggedSublist.style.display = draggedSublistDisplay || '';
           }
-
-          delete itemEl._dragSublist;
-          delete itemEl._dragSublistDisplay;
         }
       });
       sidebarSortableInstances.push(nestedSortable);
@@ -4660,40 +4616,117 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
 
-  tabs.forEach(tab => {
-    tab.setAttribute('tabindex', '0');
+  // 自定义拖拽排序，彻底解决点击与拖拽冲突
+  (function setupTabsDragAndClick() {
+    const DRAG_THRESHOLD = 5; // 移动超过 5px 才算拖拽
 
-    tab.addEventListener('click', function () {
-        const selectedEngine = this.getAttribute('data-engine');
-        const searchInput = document.querySelector('.search-input');
-        const searchQuery = searchInput.value.trim();
-        
-        // 移除所有标签的激活状态
-        tabs.forEach(t => t.classList.remove('active'));
-        // 为当前点击的标签添加激活状态
-        this.classList.add('active');
+    tabsContainer.addEventListener('mousedown', function (e) {
+      const tab = e.target.closest('.tab');
+      if (!tab) return;
 
-        // 如果搜索框有内容，立即执行搜索
-        if (searchQuery) {
+      e.preventDefault(); // 阻止浏览器默认的 HTML5 拖拽
+      const startX = e.clientX;
+      const startY = e.clientY;
+      let isDragging = false;
+      let placeholder = null;
+
+      function onMouseMove(e) {
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+
+        if (!isDragging && (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD)) {
+          // 超过阈值，进入拖拽模式
+          isDragging = true;
+          window._isDragging = true;
+
+          // 创建占位符
+          placeholder = document.createElement('div');
+          placeholder.className = 'tab drag-placeholder';
+          placeholder.style.visibility = 'hidden';
+          tab.parentNode.insertBefore(placeholder, tab);
+
+          // 被拖拽元素样式
+          tab.style.position = 'relative';
+          tab.style.zIndex = '1000';
+          tab.style.opacity = '0.7';
+          tab.style.pointerEvents = 'none';
+          tab.style.transform = `translateX(${dx}px)`;
+        }
+
+        if (isDragging) {
+          tab.style.transform = `translateX(${dx}px)`;
+
+          // 检测鼠标下方应该插入位置
+          const children = Array.from(tabsContainer.children);
+          const currentIndex = children.indexOf(placeholder);
+          const tabCenter = tab.getBoundingClientRect().left + tab.getBoundingClientRect().width / 2;
+
+          let newIndex = currentIndex;
+          for (let i = 0; i < children.length; i++) {
+            const child = children[i];
+            if (child === tab || child === placeholder) continue;
+            const childCenter = child.getBoundingClientRect().left + child.getBoundingClientRect().width / 2;
+            if (tabCenter > childCenter && i > currentIndex) {
+              newIndex = i;
+            } else if (tabCenter < childCenter && i < currentIndex) {
+              newIndex = i;
+              break;
+            }
+          }
+
+          if (newIndex !== currentIndex) {
+            tabsContainer.insertBefore(placeholder, children[newIndex]);
+          }
+        }
+      }
+
+      function onMouseUp(e) {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+
+        // 恢复样式
+        tab.style.position = '';
+        tab.style.zIndex = '';
+        tab.style.opacity = '';
+        tab.style.pointerEvents = '';
+        tab.style.transform = '';
+
+        if (isDragging) {
+          // 拖拽结束：将 tab 插入到占位符位置
+          if (placeholder && placeholder.parentNode) {
+            placeholder.parentNode.insertBefore(tab, placeholder);
+            placeholder.parentNode.removeChild(placeholder);
+          }
+
+          window._isDragging = false;
+          window._dragJustEnded = true;
+          setTimeout(function () { window._dragJustEnded = false; }, 200);
+
+          // 保存排序
+          const orderedEngines = Array.from(tabsContainer.children).map(t => t.getAttribute('data-engine'));
+          localStorage.setItem('orderedSearchEngines', JSON.stringify(orderedEngines));
+        } else {
+          // 是点击行为：手动触发引擎切换
+          const selectedEngine = tab.getAttribute('data-engine');
+          const searchInput = document.querySelector('.search-input');
+          const searchQuery = searchInput.value.trim();
+
+          tabs.forEach(t => t.classList.remove('active'));
+          tab.classList.add('active');
+
+          if (searchQuery) {
             const searchUrl = getSearchUrl(selectedEngine, searchQuery);
             window.open(searchUrl, '_blank');
             hideSuggestions();
-            
-            // 使用 setTimeout 延迟恢复默认搜索引擎状态
             setTimeout(restoreDefaultSearchEngine, 300);
+          }
         }
-    });
-  });
+      }
 
-  new Sortable(tabsContainer, {
-    animation: 150,
-    forceFallback: true,
-    fallbackOnBody: true,
-    onEnd: function (evt) {
-      const orderedEngines = Array.from(tabsContainer.children).map(tab => tab.getAttribute('data-engine'));
-      localStorage.setItem('orderedSearchEngines', JSON.stringify(orderedEngines));
-    }
-  });
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+  })();
 
   const savedOrder = JSON.parse(localStorage.getItem('orderedSearchEngines'));
   if (savedOrder) {
@@ -5291,17 +5324,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
-
-
-  new Sortable(tabsContainer, {
-    animation: 150,
-    forceFallback: true,
-    fallbackOnBody: true,
-    onEnd: function (evt) {
-      const orderedEngines = Array.from(tabsContainer.children).map(tab => tab.getAttribute('data-engine'));
-      localStorage.setItem('orderedSearchEngines', JSON.stringify(orderedEngines));
-    }
-  });
 
 
   searchInput.addEventListener('focus', function () {
