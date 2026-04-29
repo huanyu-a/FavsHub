@@ -1,5 +1,52 @@
 # 更新日志
 
+## [v2.0.3] - 2026-04-29
+
+### 🎨 界面优化
+
+#### PromptPro 侧边栏与主页统一
+- **侧边栏宽度统一**：PromptPro 侧边栏宽度从 `260px` 调整为 `18rem`，与主页一致
+- **文件夹样式统一**：字体大小 `0.875rem`、字重 `600`、选中背景色统一使用 `bg-emerald-500`
+- **图标统一**：文件夹及"全部"图标从 Remix Icons 改为 Material Icons
+- **标签按钮位置调整**：新建标签按钮从侧边栏头部移至标签标题行，标签标题栏改为 `flex + space-between` 布局
+- **SVG 图标**："全部"应用图标从 `<span class="material-icons">apps</span>` 改为内联 SVG
+
+#### 文件夹折叠展开
+- **"全部"项支持折叠/展开**：点击"全部"行的箭头图标可折叠或展开所有文件夹
+- 箭头图标随状态切换（`expand_less` / `chevron_right`）
+- 折叠状态下文件夹通过 `.folder-collapsed` 隐藏
+
+#### 徽章与按钮对齐优化
+- **数量徽章**：添加背景药丸样式（`rgba(0,0,0,0.04)` 圆角背景），选中态使用白色半透明背景
+- **元素排序**：文件夹名称 `flex:1`（溢出省略）、数量徽章 `order:10`、删除按钮 `order:11`、展开箭头 `order:12`
+- **右对齐**：删除按钮和数量徽章统一右对齐
+
+#### 主页精简
+- **移除 `sidebar-panel-header`**：侧边栏顶部多余的头部区域已删除
+- **移除面包屑**：`#folder-name` 面包屑元素已删除
+- **DOM 层级合并**：`<div class="bookmarks-container">` 与 `<div id="bookmarks-list">` 合并为单层 `<div class="bookmarks-container" id="bookmarks-list">`
+
+### 🐛 问题修复
+
+- **标签点击与拖拽冲突**：修复导航页点击标签时误触发拖拽的问题
+  - 根因：所有 Sortable.js 实例中设置的 `forceFallback: true` 导致 mousedown/pointerdown 事件被拦截，无法正确区分点击与拖拽
+  - 修复：移除全部 4 个 Sortable 实例的 `forceFallback` 和 `fallbackOnBody` 配置，改用原生 HTML5 拖拽 API（内置约 5px 的点击/拖拽判定阈值）
+  - 搜索引擎标签页改用自定义 pointer 事件处理，实现精确的拖拽阈值判定（5px）
+  - 优化 `_dragJustEnded` 标志位：仅在位置实际发生改变时（`oldIndex !== newIndex || from !== to`）才设置，避免阻止后续点击事件
+- **主页滚动失效**：修复合并 DOM 层级后主体区域无法垂直滚动的问题
+  - 根因：`main-bundle.css` 中 `#bookmarks-list` 的 CSS 块在 `max-width: 1200px` 后过早闭合（多余的 `}`），导致嵌套的滚动条样式和媒体查询规则被孤立在块外，成为无效 CSS
+  - 修复：移除过早的闭合花括号，恢复正确的 CSS 嵌套结构
+  - `#bookmarks-list` 使用 `overflow: visible`，由 `main` 元素的 `overflow-auto` 处理滚动
+
+### 📝 技术改进
+
+- PromptPro 暗色模式适配：更新 `.item-count`、`.folder-item.bg-emerald-500 .item-count` 的暗色样式
+- `index-sidebar-fix.css`：移除 `.active` 状态样式（PromptPro 统一使用 `bg-emerald-500`）
+- `script.js`：为 `folderNameElement` 添加空值检查，防止已移除元素导致 `observer.observe()` 报错
+- `icons.js`：新增 `apps` SVG 图标常量
+
+---
+
 ## [v2.0.2] - 2026-04-27
 
 ### ✨ 新增功能
