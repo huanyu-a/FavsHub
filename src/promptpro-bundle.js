@@ -392,50 +392,56 @@ window.PromptProDB = PromptProDB;
 
   async function loadFolders() { state.folders = await PromptProDB.getFolders(); renderFolders(); }
   async function loadTags() { state.tags = await PromptProDB.getTags(); renderTags(); }
-  async function loadStats() { state.stats = await PromptProDB.getStats(); const el = document.getElementById('allCount'); if (el) el.textContent = state.stats.total_prompts || 0; }
+  async function loadStats() { state.stats = await PromptProDB.getStats(); }
 
   function renderFolders() {
-    const list = document.getElementById('folderList');
+    const list = document.getElementById('categories-list');
     if (!list) return;
-    // "全部"按钮 - 判断是否展开
-    const toggleIcon = state.foldersExpanded ? 'ri-arrow-up-s-line' : 'ri-arrow-down-s-line';
-    let html = `<div class="sidebar-item ${!state.selectedFolder ? 'active' : ''}" data-folder="">
-      <span><i class="ri-apps-line"></i> 全部</span>
-      <div class="sidebar-item-actions">
-        <span class="sidebar-count">${state.stats.total_prompts || 0}</span>
-        <i class="${toggleIcon} sidebar-item-toggle-icon ${state.foldersExpanded ? '' : 'collapsed'}" id="toggleFoldersIcon"></i>
-      </div>
-    </div>`;
-    // 文件夹 + 显示统计 + 删除按钮
-    if (state.foldersExpanded) {
-      state.folders.forEach(folder => {
-        html += `<div class="sidebar-item ${state.selectedFolder === folder.folder_id ? 'active' : ''}" data-folder="${folder.folder_id}">
-          <span><i class="ri-folder-line"></i> ${escapeHtml(folder.folder_name)}</span>
-          <div class="sidebar-item-actions">
-            <span class="sidebar-count">${folder.prompt_count || 0}</span>
-            <button class="sidebar-item-delete" data-folder-id="${folder.folder_id}" title="点击删除文件夹"><i class="ri-close-line"></i></button>
-          </div>
-        </div>`;
-      });
-    }
+
+    const arrowIcon = state.foldersExpanded ? ICONS.expand_less : ICONS.chevron_right;
+    const folderClass = state.foldersExpanded ? 'folder-item' : 'folder-item folder-collapsed';
+
+    let html = '';
+    // "全部" item - 带折叠展开功能
+    html += `<li class="folder-item ${!state.selectedFolder ? 'bg-emerald-500' : ''}" data-folder="" data-toggle="folders">
+      <span class="material-icons mr-2">${ICONS.apps}</span>
+      <span>全部</span>
+      <span class="item-count">${state.stats.total_prompts || 0}</span>
+      <span class="material-icons ml-auto folder-arrow">${arrowIcon}</span>
+    </li>`;
+
+    // Folder items - 根据折叠状态显示/隐藏
+    state.folders.forEach(folder => {
+      html += `<li class="${state.selectedFolder === folder.folder_id ? folderClass + ' bg-emerald-500' : folderClass}" data-folder="${folder.folder_id}">
+        <span class="material-icons mr-2">${ICONS.folder}</span>
+        <span>${escapeHtml(folder.folder_name)}</span>
+        <span class="item-count">${folder.prompt_count || 0}</span>
+        <button class="item-delete" data-folder-id="${folder.folder_id}" title="删除文件夹"><i class="ri-close-line"></i></button>
+      </li>`;
+    });
+
     list.innerHTML = html;
 
-    // 绑定点击事件
-    list.querySelectorAll('.sidebar-item').forEach(item => {
-      item.addEventListener('click', (e) => {
-        // 点击折叠/展开
-        if (e.target.closest('.sidebar-item-toggle-icon')) {
-          e.stopPropagation();
+    // Bind "全部" toggle click
+    const allItem = list.querySelector('.folder-item[data-toggle="folders"]');
+    if (allItem) {
+      allItem.addEventListener('click', (e) => {
+        if (!e.target.closest('.item-delete')) {
           state.foldersExpanded = !state.foldersExpanded;
           renderFolders();
-          return;
         }
-        if (!e.target.closest('.sidebar-item-delete')) selectFolder(item.dataset.folder);
+      });
+    }
+
+    // Bind folder click events
+    list.querySelectorAll('.folder-item[data-folder]:not([data-toggle])').forEach(item => {
+      item.addEventListener('click', (e) => {
+        if (!e.target.closest('.item-delete')) selectFolder(item.dataset.folder);
       });
     });
 
-    // 删除按钮点击事件
-    list.querySelectorAll('.sidebar-item-delete').forEach(btn => {
+    // Folder delete button events
+    list.querySelectorAll('.item-delete[data-folder-id]').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         e.stopPropagation();
         const folder = state.folders.find(f => f.folder_id === btn.dataset.folderId);
@@ -447,17 +453,69 @@ window.PromptProDB = PromptProDB;
         }
       });
     });
+
+    // Also render tags grid
+    renderTagsGrid();
+  }
+
+  function renderTagsGrid() {
+    const grid = document.getElementById('sidebar-tags-grid');
+    if (!grid) return;
+
+    const activeTags = state.tags.filter(t => t.use_count > 0);
+    const label = grid.previousElementSibling; // .tags-section-label
+
+    if (activeTags.length === 0) {
+      grid.innerHTML = '';
+      if (label) label.style.display = 'none';
+      return;
+    }
+
+    if (label) label.style.display = '';
+
+    let html = '';
+    activeTags.forEach(tag => {
+      const isActive = state.selectedTags.includes(tag.tag_id);
+      html += `<span class="sidebar-tag-chip ${isActive ? 'active' : ''}" data-tag="${tag.tag_id}">
+        ${isActive ? '<i class="ri-check-line"></i>' : ''}
+        <span class="tag-chip-name">${escapeHtml(tag.tag_name)}</span>
+        <button class="tag-chip-delete" data-tag-id="${tag.tag_id}" title="删除标签"><i class="ri-close-line"></i></button>
+      </span>`;
+    });
+
+    grid.innerHTML = html;
+
+    // Bind tag click events
+    grid.querySelectorAll('.sidebar-tag-chip').forEach(chip => {
+      chip.addEventListener('click', (e) => {
+        if (!e.target.closest('.tag-chip-delete')) toggleTag(chip.dataset.tag);
+      });
+    });
+
+    // Tag delete button events
+    grid.querySelectorAll('.tag-chip-delete').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const tag = state.tags.find(t => t.tag_id === btn.dataset.tagId);
+        if (tag && confirm(`确定要删除标签"${tag.tag_name}"吗？`)) {
+          await PromptProDB.deleteTag(tag.tag_id);
+          showToast('标签已删除');
+          const idx = state.selectedTags.indexOf(tag.tag_id);
+          if (idx > -1) state.selectedTags.splice(idx, 1);
+          await loadAll();
+        }
+      });
+    });
   }
 
   function renderTags() {
-    const list = document.getElementById('tagList');
-    if (!list) return;
-    let html = '<div class="tag-grid">';
-    state.tags.filter(t => t.use_count > 0).forEach(tag => { const isActive = state.selectedTags.includes(tag.tag_id); html += `<div class="tag-chip ${isActive ? 'active' : ''}" data-tag="${tag.tag_id}">${isActive ? '<i class="ri-check-line"></i>' : ''}<span class="tag-chip-name">${escapeHtml(tag.tag_name)}</span><button class="tag-chip-delete" data-tag-id="${tag.tag_id}" title="删除标签"><i class="ri-close-line"></i></button></div>`; });
-    html += '</div>';
-    list.innerHTML = html;
-    list.querySelectorAll('.tag-chip').forEach(chip => { chip.addEventListener('click', (e) => { if (!e.target.closest('.tag-chip-delete')) toggleTag(chip.dataset.tag); }); });
-    list.querySelectorAll('.tag-chip-delete').forEach(btn => { btn.addEventListener('click', async (e) => { e.stopPropagation(); const tag = state.tags.find(t => t.tag_id === btn.dataset.tagId); if (tag && confirm(`确定要删除标签"${tag.tag_name}"吗？`)) { await PromptProDB.deleteTag(tag.tag_id); showToast('标签已删除'); const idx = state.selectedTags.indexOf(tag.tag_id); if (idx > -1) state.selectedTags.splice(idx, 1); await loadAll(); } }); });
+    renderTagsGrid();
+    // Also update folders for counts
+    const list = document.getElementById('categories-list');
+    if (list) {
+      const allItem = list.querySelector('.folder-item[data-folder=""] .item-count');
+      if (allItem) allItem.textContent = state.stats.total_prompts || 0;
+    }
   }
 
   function selectFolder(folderId) { state.selectedFolder = state.selectedFolder === folderId ? '' : folderId; renderFolders(); updateFilterBar(); loadPrompts(); }
@@ -855,25 +913,8 @@ window.PromptProDB = PromptProDB;
   function closeDeleteModal() { const modal = document.getElementById('deleteModal'); if (modal) modal.classList.remove('active'); }
 
   function bindEvents() {
-    // 切换主题按钮
-    const navThemeBtn = document.getElementById('navThemeBtn');
-    if (navThemeBtn) {
-      navThemeBtn.addEventListener('click', () => {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        
-        // 更新图标
-        const icon = navThemeBtn.querySelector('i');
-        if (icon) {
-          icon.className = newTheme === 'dark' ? 'ri-sun-line' : 'ri-moon-line';
-        }
-      });
-    }
-    
-    document.querySelectorAll('.nav-btn-sub').forEach(btn => { btn.addEventListener('click', () => { document.querySelectorAll('.nav-btn-sub').forEach(b => b.classList.remove('active')); btn.classList.add('active'); state.currentView = btn.dataset.view; loadPrompts(); }); });
+    const btnFavorites = document.getElementById('btnFavorites');
+    if (btnFavorites) { btnFavorites.addEventListener('click', () => { const isActive = btnFavorites.classList.toggle('active'); state.currentView = isActive ? 'favorites' : 'prompts'; loadPrompts(); }); }
     const searchInput = document.getElementById('searchInput');
     if (searchInput) { const debouncedSearch = debounce(() => { state.keyword = searchInput.value.trim(); updateFilterBar(); loadPrompts(); }, 500); searchInput.addEventListener('input', debouncedSearch); }
     const createBtn = document.getElementById('createPromptBtn');
@@ -927,13 +968,17 @@ window.PromptProDB = PromptProDB;
     if (importFileInput) { importFileInput.addEventListener('change', async (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = async (event) => { try { const data = JSON.parse(event.target.result); if (confirm('确定要导入数据吗？')) { if (await PromptProDB.importData(data)) { showToast('数据已导入'); await loadAll(); } else showToast('导入失败，请重试', 'error'); } } catch (error) { showToast('导入失败，请重试', 'error'); } }; reader.readAsText(file); e.target.value = ''; }); }
   }
 
+  function isPromptProPage() {
+    return document.querySelector('meta[name="page-id"][content="promptpro"]') !== null;
+  }
+
   async function init() {
+    // 仅在 promptpro 页面执行，避免覆盖主页导航
+    if (!isPromptProPage()) return;
+
     const loading = document.getElementById('loading');
     if (loading) loading.style.display = 'flex';
     try {
-      // 初始化主题
-      initTheme();
-
       await PromptProDB.init();
       await PromptProDB.initSampleData();
       await loadAll();
@@ -945,37 +990,6 @@ window.PromptProDB = PromptProDB;
     } catch (error) { console.error('[PromptPro] 初始化失败:', error); if (loading) loading.innerHTML = `<div style="color: #EF4444;"><i class="ri-error-warning-line" style="font-size: 2rem;"></i><p>初始化失败</p><p style="font-size: 12px;">${error.message}</p></div>`; }
   }
 
-  // 初始化主题
-  function initTheme() {
-    const savedTheme = localStorage.getItem('theme');
-    const navThemeBtn = document.getElementById('navThemeBtn');
-
-    if (savedTheme) {
-      document.documentElement.setAttribute('data-theme', savedTheme);
-      // 更新图标
-      if (navThemeBtn) {
-        const icon = navThemeBtn.querySelector('i');
-        if (icon) {
-          icon.className = savedTheme === 'dark' ? 'ri-sun-line' : 'ri-moon-line';
-        }
-      }
-    } else {
-      // 未设置主题时，跟随系统
-      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const theme = isDark ? 'dark' : 'light';
-      document.documentElement.setAttribute('data-theme', theme);
-      localStorage.setItem('theme', theme);
-      
-      // 更新图标
-      if (navThemeBtn) {
-        const icon = navThemeBtn.querySelector('i');
-        if (icon) {
-          icon.className = isDark ? 'ri-sun-line' : 'ri-moon-line';
-        }
-      }
-    }
-  }
-
   // 返回顶部按钮 (同时显示百分比和箭头)
   function initBackToTop() {
     const backToTopBtn = document.getElementById('back-to-top');
@@ -985,54 +999,51 @@ window.PromptProDB = PromptProDB;
         return;
     }
 
-    let scrollTimeout; // 滚动停止时隐藏箭头
-    const SHOW_ARROW_DELAY = 3000; // 3秒后隐藏箭头
+    // 获取实际滚动的容器
+    const scrollContainer = document.querySelector('.main-content') || document.scrollingElement || document.documentElement;
+
+    let scrollTimeout;
+    const SHOW_ARROW_DELAY = 3000;
 
     function handleScroll() {
-      // 获取页面滚动位置
-      const scrollPosition = window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
-      const totalHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-      
+      const el = scrollContainer === document.scrollingElement ? document.scrollingElement : scrollContainer;
+      const scrollPosition = el.scrollTop || 0;
+      const totalHeight = el.scrollHeight - el.clientHeight;
+
       let scrollPercentage = 0;
       if (totalHeight > 0) {
         scrollPercentage = Math.min(Math.round((scrollPosition / totalHeight) * 100), 100);
       }
 
-      // 显示/隐藏按钮 (只要有滚动就显示)
       if (scrollPercentage > 0 || scrollPosition > 5) {
         backToTopBtn.classList.add('show');
-        
-        // 1. 优先显示百分比，不显示箭头
         backToTopBtn.classList.add('show-percent');
-        
+
         if (scrollPercentElement) scrollPercentElement.textContent = scrollPercentage + '%';
-        
-        // 主题切换功能 (亮色/暗色切换)
+
         const progressClasses = Array.from(backToTopBtn.classList).filter(cls => cls.startsWith('progress-'));
         progressClasses.forEach(cls => backToTopBtn.classList.remove(cls));
         backToTopBtn.classList.add(`progress-${scrollPercentage}`);
 
-        // 2. 如果滚动停止n秒，显示箭头
         clearTimeout(scrollTimeout);
         scrollTimeout = setTimeout(() => {
            backToTopBtn.classList.remove('show-percent');
         }, SHOW_ARROW_DELAY);
       } else {
-        // 没有滚动时隐藏
         backToTopBtn.classList.remove('show');
-        backToTopBtn.classList.remove('show-percent'); // 确保百分比也隐藏
+        backToTopBtn.classList.remove('show-percent');
       }
     }
 
-    // 监听窗口滚动 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    
+    // 监听主内容区滚动
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+
     // 初始化时调用
     handleScroll();
 
     // 点击返回顶部
     backToTopBtn.addEventListener('click', () => {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollContainer.scrollTo({ top: 0, behavior: 'smooth' });
     });
   }
 

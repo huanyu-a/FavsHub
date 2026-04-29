@@ -1603,32 +1603,13 @@ main {
   gap: 1rem;
   margin: 0 auto;
   width: 100%;
-  overflow-y: auto; /* ?��为�?????auto，更好�????�容???*/
-  overflow-x: hidden;
+  overflow: visible; /* 允许内容撑大父元素，由 main 元素处理滚动 */
   padding: 0 0 1rem 0;
   height: auto;
-  scroll-behavior: smooth; /* 添�?�平滑�?�动?????? */
-  
+
   /* 默认桌面�?�? */
   grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
   max-width: 1200px;
-  
-  /* 滚动?��?��?��?���?- ????��于Firefox */
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-  
-  /* Chrome, Safari ???Opera ???滚动?��?���? */
-  &::-webkit-scrollbar {
-    width: 6px; /* ?���????滚动?�� */
-    background: transparent;
-  }
-  
-  &::-webkit-scrollbar-thumb {
-    background-color: transparent; /* 默认�???��?��?? */
-    border-radius: 6px; /* �???��??�? */
-    transition: background-color 0.3s ease; /* 平�?��??渡�????? */
-  }
-  
   /* 滚动?��???滚动?��?���?- ??��?�JS添�??.scrolling�?*/
   &.scrolling::-webkit-scrollbar-thumb {
     background-color: rgba(203, 213, 225, 0.5); /* 滚动?��?���?*/

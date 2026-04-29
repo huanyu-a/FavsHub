@@ -105,24 +105,26 @@
 
 .tag {
     font-size: 11px;
-    padding: 2px 8px;
-    background: #f3f4f6;
-    color: #4b5563;
+    padding: 3px 10px;
+    background: rgba(16, 185, 129, 0.06);
+    color: #475569;
+    border: 1px solid rgba(16, 185, 129, 0.1);
     border-radius: 99px;
     font-weight: 500;
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    transition: background 0.2s;
+    transition: all 0.2s;
 }
 
 .tag:hover {
-    background: #e5e7eb;
+    background: rgba(16, 185, 129, 0.12);
+    border-color: rgba(16, 185, 129, 0.2);
 }
 
 .tag i {
     font-size: 12px;
-    color: #9ca3af;
+    color: #10b981;
 }
 
 /* Meta Footer */
@@ -201,16 +203,18 @@
 }
 
 [data-theme="dark"] .tag {
-    background: #374151;
-    color: #d1d5db;
+    background: rgba(16, 185, 129, 0.08);
+    color: var(--text-secondary);
+    border: 1px solid rgba(16, 185, 129, 0.12);
 }
 
 [data-theme="dark"] .tag:hover {
-    background: #4b5563;
+    background: rgba(16, 185, 129, 0.14);
+    border-color: rgba(16, 185, 129, 0.25);
 }
 
 [data-theme="dark"] .tag i {
-    color: #9ca3af;
+    color: #34D399;
 }
 
 [data-theme="dark"] .prompt-meta-footer {

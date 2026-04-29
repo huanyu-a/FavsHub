@@ -3916,12 +3916,13 @@ document.addEventListener('DOMContentLoaded', function () {
   const folderNameElement = document.getElementById('folder-name');
 
   // 设置一个 MutationObserver 来监视 folder-name 元素的变化
-  const observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
+  if (folderNameElement) {
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+      });
     });
-  });
-
-  observer.observe(folderNameElement, { childList: true, subtree: true });
+    observer.observe(folderNameElement, { childList: true, subtree: true });
+  }
 
   function expandBookmarkTree(category) {
     let parent = category.parentElement;

@@ -148,15 +148,15 @@
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 12px;
+    padding: 6px 14px;
     background: white;
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 99px;
     color: var(--text-primary);
     font-size: 12px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tag-suggestion i {
@@ -169,6 +169,8 @@
     background: var(--primary-light);
     border-color: rgba(16, 185, 129, 0.3);
     color: var(--primary-color);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.15);
 }
 
 .tag-suggestion:hover i {

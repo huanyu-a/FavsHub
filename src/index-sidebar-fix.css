@@ -13,14 +13,7 @@
     color: inherit !important;
 }
 
-#categories-list .folder-item.active {
-    color: #10b981 !important;
-    font-weight: bold !important;
-}
-
-#categories-list .folder-item.active i {
-    color: #10b981 !important;
-}
+/* bg-emerald-500 样式由 main-bundle.css 定义 */
 
 /* 暗色模式 - 左侧导航白色文字 */
 [data-theme="dark"] #categories-list .folder-item {
