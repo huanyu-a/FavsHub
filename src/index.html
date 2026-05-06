@@ -17,6 +17,7 @@
   <script src="wallpaper.js" defer></script>
   <script type="module" src="icons.js"></script>
   <script type="module" src="settings.js"></script>
+  <script type="module" src="backup-manager.js"></script>
   <script type="module" src="search-engine-dropdown.js"></script>
   <script type="module" src="promptpro.js"></script>
   <script src="promptpro-bundle.js"></script>
@@ -209,6 +210,7 @@
           <button class="settings-tab-button" data-tab="floating-ball" data-i18n="floatingBallTab">悬浮球设置</button>
           <button class="settings-tab-button" data-tab="link-opening" data-i18n="linkOpeningTab">链接打开方式</button>
           <button class="settings-tab-button" data-tab="shortcuts" data-i18n="shortcutsTab">快捷键</button>
+          <button class="settings-tab-button" data-tab="backup" data-i18n="backupTab">数据备份</button>
         </div>
         <div class="settings-content">
           <div id="appearance-settings" class="settings-tab-content active">
@@ -462,6 +464,36 @@
                </div>
              </div>
            </div>
+          <div id="backup-settings" class="settings-tab-content">
+            <h3 class="settings-modal-subtitle" data-i18n="backupTitle">自动备份 PromptPro 数据</h3>
+            <p data-i18n="backupDescription" class="settings-description">选择本地文件夹，自动备份 PromptPro 的提示词、文件夹、标签和版本历史。</p>
+
+            <h4 class="settings-section-title" data-i18n="selectBackupFolder">备份文件夹</h4>
+            <div class="setting-option" style="display: flex; align-items: center; gap: 12px;">
+              <button id="select-backup-folder" class="custom-button" data-i18n="selectBackupFolder">选择文件夹</button>
+              <span id="backup-folder-name" class="backup-folder-name" style="color: var(--text-secondary, #888); font-size: 13px;">未选择</span>
+            </div>
+
+            <h4 class="settings-section-title" data-i18n="enableAutoBackup">每日自动备份</h4>
+            <div class="setting-option">
+              <label for="enable-auto-backup" class="switch-label" data-i18n="enableAutoBackup">每日自动备份</label>
+              <label class="switch">
+                <input type="checkbox" id="enable-auto-backup">
+                <span class="slider round"></span>
+              </label>
+            </div>
+
+            <h4 class="settings-section-title" data-i18n="manualBackupTitle">手动备份</h4>
+            <div class="setting-option" style="display: flex; align-items: center; gap: 12px;">
+              <button id="manual-backup-btn" class="custom-button" data-i18n="backupNow">立即备份</button>
+              <span id="last-backup-time" style="color: var(--text-secondary, #888); font-size: 13px;">上次备份：未备份</span>
+            </div>
+
+            <h4 class="settings-section-title">备份记录</h4>
+            <div id="backup-history-list" class="backup-history-list">
+              <p style="color: var(--text-secondary, #888); font-size: 13px;">暂无备份记录</p>
+            </div>
+          </div>
 
         </div>
       </div>

@@ -11,14 +11,17 @@ const STORAGE_KEYS = {
   VERSIONS: 'versions'
 };
 
+const BACKUP_CONFIG_STORE = 'backup_config';
+
 class PromptProDB {
   constructor() { this.db = null; }
 
   static async init() {
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open('PromptProDB', 1);
+    const openDB = (version) => new Promise((resolve, reject) => {
+      const request = indexedDB.open('PromptProDB', version);
       request.onerror = () => reject(request.error);
-      request.onsuccess = (event) => { this.db = event.target.result; resolve(this.db); };
+      request.onblocked = () => reject(new Error('数据库被阻塞'));
+      request.onsuccess = (event) => resolve(event.target.result);
       request.onupgradeneeded = (event) => {
         const db = event.target.result;
         if (!db.objectStoreNames.contains(STORAGE_KEYS.PROMPTS)) {
@@ -39,11 +42,43 @@ class PromptProDB {
           s.createIndex('prompt_id', 'prompt_id', { unique: false });
           s.createIndex('created_at', 'created_at', { unique: false });
         }
+        if (!db.objectStoreNames.contains(BACKUP_CONFIG_STORE)) {
+          db.createObjectStore(BACKUP_CONFIG_STORE);
+        }
       };
     });
+
+    let db = await openDB(2);
+    const allStores = [...Object.values(STORAGE_KEYS), BACKUP_CONFIG_STORE];
+    const missing = allStores.filter(name => !db.objectStoreNames.contains(name));
+    if (missing.length > 0) {
+      db.close();
+      db = await openDB(db.version + 1);
+    }
+    this.db = db;
   }
 
   static getDB() { if (!this.db) throw new Error('数据库未初始化'); return this.db; }
+
+  static async getBackupConfig(key) {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(BACKUP_CONFIG_STORE, 'readonly');
+      const req = tx.objectStore(BACKUP_CONFIG_STORE).get(key);
+      req.onsuccess = () => resolve(req.result ?? null);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
+  static async setBackupConfig(key, value) {
+    if (!this.db) await this.init();
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(BACKUP_CONFIG_STORE, 'readwrite');
+      const req = tx.objectStore(BACKUP_CONFIG_STORE).put(value, key);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error);
+    });
+  }
 
   static async getAll(storeName) {
     return new Promise((resolve, reject) => {
@@ -294,17 +329,19 @@ class PromptProDB {
   }
 
   static async exportData() {
-    return { version: '2.0.0', export_date: new Date().toISOString(), prompts: await this.getAll(STORAGE_KEYS.PROMPTS), folders: await this.getAll(STORAGE_KEYS.FOLDERS), tags: await this.getAll(STORAGE_KEYS.TAGS), tag_relations: await this.getAll(STORAGE_KEYS.TAG_RELATIONS), versions: await this.getAll(STORAGE_KEYS.VERSIONS) };
+    return { prompts: await this.getAll(STORAGE_KEYS.PROMPTS), folders: await this.getAll(STORAGE_KEYS.FOLDERS), tags: await this.getAll(STORAGE_KEYS.TAGS), tag_relations: await this.getAll(STORAGE_KEYS.TAG_RELATIONS), versions: await this.getAll(STORAGE_KEYS.VERSIONS) };
   }
 
   static async importData(data) {
     try {
+      // 兼容新旧两种格式
+      const payload = (data.type === 'promptpro' && data.data) ? data.data : data;
       for (const store of Object.values(STORAGE_KEYS)) await this.clear(store);
-      if (data.prompts) for (const p of data.prompts) await this.put(STORAGE_KEYS.PROMPTS, p);
-      if (data.folders) for (const f of data.folders) await this.put(STORAGE_KEYS.FOLDERS, f);
-      if (data.tags) for (const t of data.tags) await this.put(STORAGE_KEYS.TAGS, t);
-      if (data.tag_relations) for (const r of data.tag_relations) await this.put(STORAGE_KEYS.TAG_RELATIONS, r);
-      if (data.versions) for (const v of data.versions) await this.put(STORAGE_KEYS.VERSIONS, v);
+      if (payload.prompts) for (const p of payload.prompts) await this.put(STORAGE_KEYS.PROMPTS, p);
+      if (payload.folders) for (const f of payload.folders) await this.put(STORAGE_KEYS.FOLDERS, f);
+      if (payload.tags) for (const t of payload.tags) await this.put(STORAGE_KEYS.TAGS, t);
+      if (payload.tag_relations) for (const r of payload.tag_relations) await this.put(STORAGE_KEYS.TAG_RELATIONS, r);
+      if (payload.versions) for (const v of payload.versions) await this.put(STORAGE_KEYS.VERSIONS, v);
       return true;
     } catch (error) { console.error('[PromptPro] ✗ 导入操作失败 | 错误信息:', error); return false; }
   }
@@ -960,12 +997,6 @@ window.PromptProDB = PromptProDB;
     initFormTagSelector();
     document.querySelectorAll('.modal').forEach(modal => { modal.addEventListener('click', (e) => { if (e.target === modal) modal.classList.remove('active'); }); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') document.querySelectorAll('.modal.active').forEach(modal => modal.classList.remove('active')); });
-    const exportDataBtn = document.getElementById('exportDataBtn');
-    if (exportDataBtn) { exportDataBtn.addEventListener('click', async () => { const data = await PromptProDB.exportData(); const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }); const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `promptpro-backup-${new Date().toISOString().slice(0, 10)}.json`; a.click(); URL.revokeObjectURL(url); showToast('数据已导出'); }); }
-    const importDataBtn = document.getElementById('importDataBtn');
-    if (importDataBtn) { importDataBtn.addEventListener('click', () => { const input = document.getElementById('importFileInput'); if (input) input.click(); }); }
-    const importFileInput = document.getElementById('importFileInput');
-    if (importFileInput) { importFileInput.addEventListener('change', async (e) => { const file = e.target.files[0]; if (!file) return; const reader = new FileReader(); reader.onload = async (event) => { try { const data = JSON.parse(event.target.result); if (confirm('确定要导入数据吗？')) { if (await PromptProDB.importData(data)) { showToast('数据已导入'); await loadAll(); } else showToast('导入失败，请重试', 'error'); } } catch (error) { showToast('导入失败，请重试', 'error'); } }; reader.readAsText(file); e.target.value = ''; }); }
   }
 
   function isPromptProPage() {

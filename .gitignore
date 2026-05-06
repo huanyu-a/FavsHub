@@ -1,0 +1,5 @@
+.vercel
+node_modules
+.env.development.local
+.claude/
+FavsHub.rar

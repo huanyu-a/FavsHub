@@ -1,5 +1,6 @@
 // 导入所需的依赖
 import { ICONS } from './icons.js';
+import { backupManager } from './backup-manager.js';
 
 // 设置管理器类
 class SettingsManager {
@@ -101,6 +102,9 @@ class SettingsManager {
     if (configureShortcuts) {
       this.initShortcutsSettings();
     }
+
+    // 初始化备份设置
+    this.initBackupSettings();
   }
 
   initEventListeners() {
@@ -291,7 +295,9 @@ class SettingsManager {
   loadSavedSettings() {
     // 加载悬浮球设置
     chrome.storage.sync.get(['enableFloatingBall'], (result) => {
-      this.enableFloatingBallCheckbox.checked = result.enableFloatingBall !== false;
+      if (this.enableFloatingBallCheckbox) {
+        this.enableFloatingBallCheckbox.checked = result.enableFloatingBall !== false;
+      }
     });
 
     // 加载背景设置
@@ -457,10 +463,13 @@ class SettingsManager {
   initFloatingBallSettings() {
     // 加载悬浮球设置
     chrome.storage.sync.get(['enableFloatingBall'], (result) => {
-      this.enableFloatingBallCheckbox.checked = result.enableFloatingBall !== false;
+      if (this.enableFloatingBallCheckbox) {
+        this.enableFloatingBallCheckbox.checked = result.enableFloatingBall !== false;
+      }
     });
 
     // 监听悬浮球设置变化
+    if (this.enableFloatingBallCheckbox) {
     this.enableFloatingBallCheckbox.addEventListener('change', () => {
       const isEnabled = this.enableFloatingBallCheckbox.checked;
       // 发送消息到 background script
@@ -472,6 +481,7 @@ class SettingsManager {
         chrome.storage.sync.set({ enableFloatingBall: isEnabled });
       });
     });
+    }
   }
 
   initLinkOpeningSettings() {
@@ -933,6 +943,148 @@ class SettingsManager {
       const isEnabled = this.openSearchInNewTabCheckbox.checked;
       chrome.storage.sync.set({ openSearchInNewTab: isEnabled });
     });
+  }
+
+  async initBackupSettings() {
+    const selectFolderBtn = document.getElementById('select-backup-folder');
+    const folderNameEl = document.getElementById('backup-folder-name');
+    const autoBackupCheckbox = document.getElementById('enable-auto-backup');
+    const manualBackupBtn = document.getElementById('manual-backup-btn');
+    const lastBackupTimeEl = document.getElementById('last-backup-time');
+
+    if (!selectFolderBtn) return;
+
+    try {
+      // 加载已保存的文件夹名称
+      const savedName = await backupManager.getFolderName();
+      console.log('[Settings] 加载备份文件夹名称:', savedName);
+      if (savedName && folderNameEl) {
+        folderNameEl.textContent = savedName;
+      }
+
+      // 加载自动备份开关状态
+      const autoEnabled = await backupManager.getAutoBackupEnabled();
+      if (autoBackupCheckbox) {
+        autoBackupCheckbox.checked = autoEnabled;
+        autoBackupCheckbox.addEventListener('change', async () => {
+          await backupManager.setAutoBackupEnabled(autoBackupCheckbox.checked);
+        });
+      }
+
+      // 加载上次备份时间
+      const lastTime = await backupManager.getLastBackupTimeFormatted();
+      console.log('[Settings] 加载上次备份时间:', lastTime);
+      if (lastTime && lastBackupTimeEl) {
+        lastBackupTimeEl.textContent = `上次备份：${lastTime}`;
+      }
+    } catch (err) {
+      console.error('[Settings] 加载备份配置失败:', err);
+    }
+
+    // 选择文件夹按钮
+    selectFolderBtn.addEventListener('click', async () => {
+      try {
+        const name = await backupManager.selectFolder();
+        if (name && folderNameEl) {
+          folderNameEl.textContent = name;
+          this._showToast(`已选择：${name}`);
+        }
+      } catch (err) {
+        console.error('[Settings] 选择文件夹失败:', err);
+        this._showToast('选择文件夹失败');
+      }
+    });
+
+    // 手动备份按钮
+    if (manualBackupBtn) {
+      manualBackupBtn.addEventListener('click', async () => {
+        try {
+          manualBackupBtn.disabled = true;
+          manualBackupBtn.textContent = '备份中...';
+          const filename = await backupManager.performBackup();
+          const newTime = await backupManager.getLastBackupTimeFormatted();
+          console.log('[Settings] 备份完成，更新时间显示:', newTime);
+          if (lastBackupTimeEl && newTime) {
+            lastBackupTimeEl.textContent = `上次备份：${newTime}`;
+          }
+          this._showToast(`备份成功：${filename}`);
+          await this.renderBackupHistory();
+        } catch (err) {
+          if (err.message === 'NO_CHANGE') {
+            this._showToast('数据无变化，不需新增记录文件');
+          } else if (err.message === 'NO_FOLDER') {
+            this._showToast('请先选择备份文件夹');
+          } else if (err.message === 'NO_PERMISSION') {
+            this._showToast('没有文件夹写入权限，请重新选择');
+          } else {
+            console.error('[Settings] 备份失败:', err);
+            this._showToast(`备份失败：${err.message || '请重试'}`);
+          }
+        } finally {
+          manualBackupBtn.disabled = false;
+          manualBackupBtn.textContent = '立即备份';
+        }
+      });
+    }
+
+    // 加载备份记录
+    await this.renderBackupHistory();
+
+    // 页面加载时检查自动备份
+    try {
+      const filename = await backupManager.checkAndAutoBackup();
+      if (filename) {
+        this._showToast(`自动备份完成：${filename}`);
+        const time = await backupManager.getLastBackupTimeFormatted();
+        if (time && lastBackupTimeEl) {
+          lastBackupTimeEl.textContent = `上次备份：${time}`;
+        }
+        await this.renderBackupHistory();
+      }
+    } catch (err) {
+      console.warn('[Settings] 自动备份检查失败:', err);
+    }
+  }
+
+  async renderBackupHistory() {
+    const container = document.getElementById('backup-history-list');
+    if (!container) return;
+
+    const records = await backupManager.getBackupHistory();
+
+    if (records.length === 0) {
+      container.innerHTML = '<p style="color: var(--text-secondary, #888); font-size: 13px;">暂无备份记录</p>';
+      return;
+    }
+
+    container.innerHTML = records.map((record, index) => `
+      <div class="backup-record-item" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border-color, #eee); font-size: 13px;">
+        <div style="flex: 1; min-width: 0;">
+          <div style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text-primary, #333);" title="${record.filename}">${record.filename}</div>
+          <div style="color: var(--text-secondary, #888); font-size: 12px; margin-top: 2px;">${record.timeFormatted}</div>
+        </div>
+        <button class="backup-delete-btn" data-index="${index}" title="删除记录" style="background: none; border: none; cursor: pointer; color: var(--text-secondary, #999); padding: 4px 8px; font-size: 16px; flex-shrink: 0;">&#x2716;</button>
+      </div>
+    `).join('');
+
+    // 绑定删除事件
+    container.querySelectorAll('.backup-delete-btn').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const index = parseInt(btn.getAttribute('data-index'), 10);
+        await backupManager.deleteBackupRecord(index);
+        await this.renderBackupHistory();
+        this._showToast('已删除备份记录');
+      });
+    });
+  }
+
+  _showToast(message) {
+    const toast = document.getElementById('toast');
+    if (toast) {
+      toast.textContent = message;
+      toast.style.display = 'block';
+      setTimeout(() => { toast.style.display = 'none'; }, 3000);
+    }
   }
 
   initShortcutsSettings() {

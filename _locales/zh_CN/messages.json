@@ -73,23 +73,23 @@
     },
     "extensionsLinkTitle": {
         "message": "扩展",
-        "description": "扩展链接的标题"
+        "description": "扩展链接标题"
     },
     "settingsLinkTitle": {
         "message": "设置",
-        "description": "设置链接的标题"
+        "description": "设置链接标题"
     },
     "settingsTitle": {
         "message": "设置",
-        "description": "设置模态框的标题"
+        "description": "设置标题"
     },
     "appearanceTab": {
         "message": "外观",
-        "description": "外观设置标签名"
+        "description": "外观设置标签"
     },
     "floatingBallTab": {
-        "message": "悬浮球设置",
-        "description": "悬浮球设置标签名"
+        "message": "悬浮球",
+        "description": "悬浮球设置标签"
     },
     "languageTab": {
         "message": "语言",
@@ -108,8 +108,8 @@
         "description": "悬浮球功能描述"
     },
     "enableFloatingBall": {
-        "message": "开启悬浮球",
-        "description": "开启悬浮球的标签"
+        "message": "启用悬浮球",
+        "description": "启用悬浮球选项"
     },
     "languageSettingsTitle": {
         "message": "语言 / Language",
@@ -122,10 +122,6 @@
     "chineseOption": {
         "message": "中文（简体）",
         "description": "简体中文语言选项"
-    },
-    "confirmDeleteMessage": {
-        "message": "您确定要删除 \"$1\" 吗？",
-        "description": "确认删除项目的消息"
     },
     "confirmDeleteBookmark": {
         "message": "您确定要删除书签 \"$1\" 吗？",
@@ -158,10 +154,6 @@
     "folderDeleted": {
         "message": "文件夹已删除：ID=$1，标题=$2",
         "description": "文件夹删除时的日志消息"
-    },
-    "confirmDeleteMessage": {
-        "message": "您确定要删除 \"$1\" 吗？",
-        "description": "确认删除项目的消息"
     },
     "morningGreeting": {
         "message": "早上好👋",
@@ -199,10 +191,6 @@
         "message": "确认删除",
         "description": "确认删除对话框的标题"
     },
-    "confirmDeleteMessage": {
-        "message": "您确定要删除 \"$1\" 吗？",
-        "description": "确认删除项目的消息"
-    },
     "scanQRCode": {
         "message": "扫描二维码",
         "description": "二维码模态窗口的标题"
@@ -227,34 +215,6 @@
         "message": "更多搜索支持即将推出",
         "description": "更多搜索支持提示"
     },
-    "settingsTitle": {
-        "message": "设置",
-        "description": "设置标题"
-    },
-    "appearanceTab": {
-        "message": "外观",
-        "description": "外观设置标签"
-    },
-    "floatingBallTab": {
-        "message": "悬浮球",
-        "description": "悬浮球设置标签"
-    },
-    "backgroundColorTitle": {
-        "message": "背景颜色",
-        "description": "背景颜色设置标题"
-    },
-    "floatingBallSettingsTitle": {
-        "message": "悬浮球设置",
-        "description": "悬浮球设置标题"
-    },
-    "floatingBallDescription": {
-        "message": "开启悬浮球后会在页面右上角显示一个可点击的悬浮图标，用于快速访问搜索引擎和书签。",
-        "description": "悬浮球功能描述"
-    },
-    "enableFloatingBall": {
-        "message": "启用悬浮球",
-        "description": "启用悬浮球选项"
-    },
     "historyLinkTitle": {
         "message": "历史记录",
         "description": "历史记录链接标题"
@@ -266,14 +226,6 @@
     "passwordsLinkTitle": {
         "message": "密码",
         "description": "密码链接标题"
-    },
-    "extensionsLinkTitle": {
-        "message": "扩展",
-        "description": "扩展链接标题"
-    },
-    "settingsLinkTitle": {
-        "message": "设置",
-        "description": "设置链接标题"
     },
     "confirmDeleteQuickLinkMessage": {
         "message": "您确定要删除快捷链接 \"$1\" 吗？，该链接将不会出现在快速链接列表中。",
@@ -290,7 +242,7 @@
     "baiduTab": {
         "message": "百度",
         "description": "百度搜索引擎标签"
-        },
+    },
     "searchEngineUpdateTip": {
         "message": "搜索引擎切换功能已更新",
         "description": "搜索引擎切换功能提示"
@@ -307,7 +259,7 @@
         "message": "必应",
         "description": "Bing 搜索引擎标签"
     },
-	"baidumLabel": {
+    "baidumLabel": {
         "message": "百度移动",
         "description": "百度移动搜索引擎标签"
     },
@@ -315,19 +267,19 @@
         "message": "百度",
         "description": "百度搜索引擎标签"
     },
-	"toutiaoLabel": {
+    "toutiaoLabel": {
         "message": "头条",
         "description": "头条搜索引擎标签"
     },
-	"sougouLabel": {
+    "sougouLabel": {
         "message": "搜狗",
         "description": "搜狗搜索引擎标签"
     },
-	"360Label": {
+    "360Label": {
         "message": "360",
         "description": "360搜索引擎标签"
     },
-	"shenmaLabel": {
+    "shenmaLabel": {
         "message": "神马",
         "description": "神马搜索引擎标签"
     },
@@ -339,11 +291,11 @@
         "message": "豆包",
         "description": "豆包搜索引擎标签"
     },
-	"qwenLabel": {
+    "qwenLabel": {
         "message": "千问",
         "description": "千问搜索引擎标签"
     },
-	"iflowLabel": {
+    "iflowLabel": {
         "message": "心流",
         "description": "心流搜索引擎标签"
     },
@@ -552,10 +504,6 @@
         "message": "设置在主页面中点击书签和快捷链接时的打开方式。",
         "description": "链接打开方式设置说明"
     },
-    "openInNewTab": {
-        "message": "在新标签页中打开",
-        "description": "在新标签页中打开链接的选项"
-    },
     "sidePanelLinkOpeningTitle": {
         "message": "侧边栏链接打开方式",
         "description": "侧边栏链接打开方式设置标题"
@@ -728,7 +676,6 @@
         "message": "搜索引擎切换功能已更新：\n1. 点击搜索图标设置默认搜索引擎\n2. 支持自定义搜索引擎\n3. 使用标签栏进行临时切换",
         "description": "搜索引擎切换功能更新详细说明"
     },
-
     "themeTitle": {
         "message": "主题设置",
         "description": "主题设置标题"
@@ -961,5 +908,53 @@
     "categoryLabel": {
         "message": "分类",
         "description": "编辑对话框中目录（分类）下拉标签"
+    },
+    "backupTab": {
+        "message": "数据备份",
+        "description": "数据备份设置标签名"
+    },
+    "backupTitle": {
+        "message": "自动备份 PromptPro 数据",
+        "description": "数据备份设置标题"
+    },
+    "backupDescription": {
+        "message": "选择本地文件夹，自动备份 PromptPro 的提示词、文件夹、标签和版本历史。",
+        "description": "数据备份设置描述"
+    },
+    "selectBackupFolder": {
+        "message": "选择文件夹",
+        "description": "选择备份文件夹按钮文本"
+    },
+    "enableAutoBackup": {
+        "message": "每日自动备份",
+        "description": "启用自动备份开关"
+    },
+    "manualBackupTitle": {
+        "message": "手动备份",
+        "description": "手动备份设置标题"
+    },
+    "backupNow": {
+        "message": "立即备份",
+        "description": "立即备份按钮文本"
+    },
+    "neverBackedUp": {
+        "message": "上次备份：未备份",
+        "description": "未备份时的提示文本"
+    },
+    "backupFolderNotSelected": {
+        "message": "未选择",
+        "description": "未选择备份文件夹时的提示"
+    },
+    "backupSuccess": {
+        "message": "备份成功：$1",
+        "description": "备份成功提示"
+    },
+    "backupFailed": {
+        "message": "备份失败，请重试",
+        "description": "备份失败提示"
+    },
+    "folderSelected": {
+        "message": "已选择：$1",
+        "description": "文件夹选择成功提示"
     }
 }

@@ -874,5 +874,53 @@
     "categoryLabel": {
         "message": "Category",
         "description": "Label for the folder/category dropdown in the edit dialog"
+    },
+    "backupTab": {
+        "message": "Backup",
+        "description": "Backup settings tab name"
+    },
+    "backupTitle": {
+        "message": "Auto Backup PromptPro Data",
+        "description": "Backup settings title"
+    },
+    "backupDescription": {
+        "message": "Select a local folder to automatically backup PromptPro prompts, folders, tags and version history.",
+        "description": "Backup settings description"
+    },
+    "selectBackupFolder": {
+        "message": "Select Folder",
+        "description": "Select backup folder button text"
+    },
+    "enableAutoBackup": {
+        "message": "Daily Auto Backup",
+        "description": "Enable auto backup toggle"
+    },
+    "manualBackupTitle": {
+        "message": "Manual Backup",
+        "description": "Manual backup settings title"
+    },
+    "backupNow": {
+        "message": "Backup Now",
+        "description": "Backup now button text"
+    },
+    "neverBackedUp": {
+        "message": "Last backup: Never",
+        "description": "Text shown when never backed up"
+    },
+    "backupFolderNotSelected": {
+        "message": "Not selected",
+        "description": "Text shown when no backup folder is selected"
+    },
+    "backupSuccess": {
+        "message": "Backup successful: $1",
+        "description": "Backup success toast"
+    },
+    "backupFailed": {
+        "message": "Backup failed, please retry",
+        "description": "Backup failure toast"
+    },
+    "folderSelected": {
+        "message": "Selected: $1",
+        "description": "Folder selected toast"
     }
 }
