@@ -275,6 +275,22 @@ class PromptProSearch {
     return div.innerHTML;
   }
 
+  // 获取最近使用的提示词
+  getRecentPrompts(limit = 10) {
+    if (!this.prompts || this.prompts.length === 0) {
+      return [];
+    }
+
+    // 按更新时间排序，返回最近的提示词
+    return [...this.prompts]
+      .sort((a, b) => {
+        const timeA = a.updated_at || a.created_at || 0;
+        const timeB = b.updated_at || b.created_at || 0;
+        return timeB - timeA;
+      })
+      .slice(0, limit);
+  }
+
   // 打开提示词编辑
   openPromptEdit(promptId) {
     // 获取提示词数据

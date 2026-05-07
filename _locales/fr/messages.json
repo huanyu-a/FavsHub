@@ -615,6 +615,10 @@
         "message": "Afficher les suggestions de favoris",
         "description": "Option pour afficher les suggestions de favoris"
     },
+    "showPromptSuggestions": {
+        "message": "Afficher les suggestions de prompts",
+        "description": "Option pour afficher les suggestions de prompts"
+    },
     "containerWidthTitle": {
         "message": "Largeur du conteneur de favoris",
         "description": "Titre des paramètres de largeur du conteneur de favoris"

@@ -780,8 +780,8 @@ class SettingsManager {
         'showExtensionsLink'
       ],
       (result) => {
-        // 设置复选框状态 - 修改搜索框的默认值为 false
-        this.showSearchBoxCheckbox.checked = result.showSearchBox === true; // 默认为 false
+        // 设置复选框状态 - 搜索框默认显示
+        this.showSearchBoxCheckbox.checked = result.showSearchBox !== false; // 默认为 true
         this.showWelcomeMessageCheckbox.checked = result.showWelcomeMessage !== false;
         this.showFooterCheckbox.checked = result.showFooter !== false;
         
@@ -792,6 +792,12 @@ class SettingsManager {
         this.showExtensionsLinkCheckbox.checked = result.showExtensionsLink !== false;
         
         // 应用设置到界面
+        // 应用搜索框显示状态
+        const searchContainer = document.querySelector('.search-container');
+        if (searchContainer) {
+          searchContainer.style.display = result.showSearchBox !== false ? '' : 'none';
+        }
+
         this.toggleElementVisibility('#history-link', result.showHistoryLink !== false);
         this.toggleElementVisibility('#downloads-link', result.showDownloadsLink !== false);
         this.toggleElementVisibility('#passwords-link', result.showPasswordsLink !== false);
@@ -901,15 +907,17 @@ class SettingsManager {
     // 获取元素引用
     this.showHistorySuggestionsCheckbox = document.getElementById('show-history-suggestions');
     this.showBookmarkSuggestionsCheckbox = document.getElementById('show-bookmark-suggestions');
+    this.showPromptSuggestionsCheckbox = document.getElementById('show-prompt-suggestions');
     this.openSearchInNewTabCheckbox = document.getElementById('open-search-in-new-tab');
-    
+
     // 加载搜索建议设置
     chrome.storage.sync.get(
-      ['showHistorySuggestions', 'showBookmarkSuggestions', 'showSearchBox', 'openSearchInNewTab'], 
+      ['showHistorySuggestions', 'showBookmarkSuggestions', 'showPromptSuggestions', 'showSearchBox', 'openSearchInNewTab'],
       (result) => {
         // 如果设置不存在(undefined)或者没有明确设置为 false,则默认为 true
         this.showHistorySuggestionsCheckbox.checked = result.showHistorySuggestions !== false;
         this.showBookmarkSuggestionsCheckbox.checked = result.showBookmarkSuggestions !== false;
+        this.showPromptSuggestionsCheckbox.checked = result.showPromptSuggestions !== false;
         this.openSearchInNewTabCheckbox.checked = result.openSearchInNewTab !== false;
 
         // 初始化时如果是新用户(设置不存在),则保存默认值
@@ -919,8 +927,11 @@ class SettingsManager {
         if (!('showBookmarkSuggestions' in result)) {
           chrome.storage.sync.set({ showBookmarkSuggestions: true });
         }
+        if (!('showPromptSuggestions' in result)) {
+          chrome.storage.sync.set({ showPromptSuggestions: true });
+        }
         if (!('showSearchBox' in result)) {
-          chrome.storage.sync.set({ showSearchBox: false });
+          chrome.storage.sync.set({ showSearchBox: true });
         }
         if (!('openSearchInNewTab' in result)) {
           chrome.storage.sync.set({ openSearchInNewTab: true });
@@ -938,7 +949,12 @@ class SettingsManager {
       const isEnabled = this.showBookmarkSuggestionsCheckbox.checked;
       chrome.storage.sync.set({ showBookmarkSuggestions: isEnabled });
     });
-    
+
+    this.showPromptSuggestionsCheckbox.addEventListener('change', () => {
+      const isEnabled = this.showPromptSuggestionsCheckbox.checked;
+      chrome.storage.sync.set({ showPromptSuggestions: isEnabled });
+    });
+
     this.openSearchInNewTabCheckbox.addEventListener('change', () => {
       const isEnabled = this.openSearchInNewTabCheckbox.checked;
       chrome.storage.sync.set({ openSearchInNewTab: isEnabled });

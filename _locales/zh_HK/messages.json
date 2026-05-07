@@ -761,6 +761,10 @@
         "message": "顯示書籤建議",
         "description": "顯示書籤建議選項"
     },
+    "showPromptSuggestions": {
+        "message": "顯示提示詞建議",
+        "description": "顯示提示詞建議選項"
+    },
     "containerWidthTitle": {
         "message": "書籤容器寬度",
         "description": "書籤容器寬度設定標題"

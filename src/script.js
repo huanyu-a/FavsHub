@@ -986,10 +986,10 @@ document.addEventListener('DOMContentLoaded', function() {
       'showExtensionsLink'
     ], 
     (result) => {
-      // 应用搜索框显示设置 - 修改为默认隐藏
+      // 应用搜索框显示设置 - 默认显示
       const searchContainer = document.querySelector('.search-container');
       if (searchContainer) {
-        searchContainer.style.display = result.showSearchBox === true ? '' : 'none';
+        searchContainer.style.display = result.showSearchBox !== false ? '' : 'none';
       }
       
       // 应用欢迎语显示设置
@@ -5022,180 +5022,6 @@ document.addEventListener('DOMContentLoaded', function () {
       );
     });
   }
-  // 获取搜索建议
-  async function getSuggestions(query) {
-    const maxHistoryResults = 200;
-    const maxBookmarkResults = 50;
-    const maxTotalSuggestions = 50;
-
-    let suggestions = [{ text: query, type: 'search', relevance: Infinity }];
-
-    // 获取设置
-    const settings = await new Promise(resolve => {
-      chrome.storage.sync.get(
-        ['showHistorySuggestions', 'showBookmarkSuggestions'],
-        resolve
-      );
-    });
-
-    // 根据设置获取历史记录建议
-    let historySuggestions = [];
-    if (settings.showHistorySuggestions !== false) {
-      const historyItems = await searchHistory(query, maxHistoryResults);
-      historySuggestions = historyItems.map(item => ({
-        text: item.title,
-        url: item.url,
-        type: 'history',
-        relevance: calculateRelevance(query, item.title, item.url),
-        timestamp: item.lastVisitTime
-      }));
-    }
-
-    // 根据设置获取书签建议
-    let bookmarkSuggestions = [];
-    if (settings.showBookmarkSuggestions !== false) {
-      const bookmarkItems = await new Promise(resolve => {
-        chrome.bookmarks.search(query, resolve);
-      });
-      bookmarkSuggestions = bookmarkItems.slice(0, maxBookmarkResults).map(item => ({
-        text: item.title,
-        url: item.url,
-        type: 'bookmark',
-        relevance: calculateRelevance(query, item.title, item.url) * RELEVANCE_CONFIG.bookmarkRelevanceBoost
-      }));
-    }
-
-    // 获取提示词建议（如果 PromptPro 搜索已初始化）
-    let promptSuggestions = [];
-    if (window.promptProSearch && window.promptProSearch.initialized) {
-      const promptResults = window.promptProSearch.search(query);
-      promptSuggestions = promptResults.slice(0, 20).map(prompt => ({
-        text: prompt.title,
-        url: `promptpro://edit/${prompt.prompt_id}`,
-        type: 'prompt',
-        relevance: prompt._score || 100,
-        promptData: prompt
-      }));
-    }
-
-    // 合并所有建议
-    suggestions.push(
-      ...historySuggestions,
-      ...bookmarkSuggestions,
-      ...promptSuggestions
-    );
-
-    // 对结果进行排序和去重
-    const uniqueSuggestions = Array.from(new Set(suggestions.map(s => s.url)))
-      .map(url => suggestions.find(s => s.url === url))
-      .sort((a, b) => b.relevance - a.relevance);
-
-    // 平衡和交替显示结果
-    const balancedResults = await balanceResults(uniqueSuggestions, maxTotalSuggestions);
-
-    return balancedResults;
-  }
-
-  function calculateRelevance(query, title, url) {
-    // 基础设置
-    const weights = {
-      // 1. 提高完全匹配的权重，让精确结果更容易被找到
-      exactTitleMatch: 200,    // 提高标题完全匹配权重
-      exactUrlMatch: 150,      // 提高 URL 完全匹配权重
-
-      // 2. 调整开头匹配权重，因为用户通常从开头输入
-      titleStartsWith: 180,    // 提高标题开头匹配权重
-      urlStartsWith: 150,      // 提高 URL 开头匹配权重
-
-      // 3. 包含匹配权重适当调，避免干扰更精确的结果
-      titleIncludes: 100,
-      urlIncludes: 80,
-
-      // 4. 提高分词匹配的权重，改善多关键词搜索体验
-      wordMatch: 70,           // 提高分词匹配基础权重
-      partialWordMatch: 40,    // 提高部分词匹配权重
-
-      // 5. 保持模糊匹配权重较低，作为补充
-      fuzzyMatch: 30
-    };
-
-    // 数据预处理
-    const lowerQuery = query.toLowerCase().trim();
-    const lowerTitle = (title || '').toLowerCase().trim();
-    const lowerUrl = (url || '').toLowerCase().trim();
-    const queryWords = lowerQuery.split(/\s+/);  // 将查询分词
-
-    let score = 0;
-
-    // 1. 完全匹配检查
-    if (lowerTitle === lowerQuery) {
-      score += weights.exactTitleMatch;
-    }
-    if (lowerUrl === lowerQuery) {
-      score += weights.exactUrlMatch;
-    }
-
-    // 2. 开头匹配检查
-    if (lowerTitle.startsWith(lowerQuery)) {
-      score += weights.titleStartsWith;
-    }
-    if (lowerUrl.startsWith(lowerQuery)) {
-      score += weights.urlStartsWith;
-    }
-
-    // 3. 包含匹配检查
-    if (lowerTitle.includes(lowerQuery)) {
-      score += weights.titleIncludes;
-    }
-    if (lowerUrl.includes(lowerQuery)) {
-      score += weights.urlIncludes;
-    }
-
-    // 4. 分词匹配
-    queryWords.forEach(word => {
-      if (word.length > 1) {
-        // 完整词匹配给予更高权重
-        if (lowerTitle.includes(word)) {
-          score += weights.wordMatch;
-          // 词在开头给予额外加分
-          if (lowerTitle.startsWith(word)) {
-            score += weights.wordMatch * 0.3;
-          }
-        }
-        if (lowerUrl.includes(word)) {
-          score += weights.wordMatch * 0.6;  // URL 分词匹配权重适当提高
-        }
-
-        // 7. 添加部分词匹配逻辑
-        const partialMatches = findPartialMatches(word, lowerTitle);
-        if (partialMatches > 0) {
-          score += weights.partialWordMatch * partialMatches * 0.5;
-        }
-      }
-    });
-
-    // 5. 模糊匹配（编辑距离）
-    if (title) {
-      const fuzzyScore = calculateFuzzyMatch(lowerQuery, lowerTitle);
-      if (fuzzyScore > 0.85) {  // 提高相似度阈值
-        score += weights.fuzzyMatch * Math.pow(fuzzyScore, 2); // 使用平方增加高相似度的权重
-      }
-    }
-
-
-    // 6. 长度惩罚因子（避免过长的结果）
-    const lengthPenalty = Math.max(1, Math.log2(lowerTitle.length / lowerQuery.length));
-    score = score / lengthPenalty;
-
-    // 7. 添加时间衰减因子（如果有时间戳）
-    if (title && title.timestamp) {
-      const daysOld = (Date.now() - title.timestamp) / (1000 * 60 * 60 * 24);
-      const timeDecay = Math.exp(-daysOld / 60);  // 延长半衰期到 60 天
-      score *= (0.7 + 0.3 * timeDecay);  // 保留基础分数的 70%
-    }
-
-    return Math.round(score * 100) / 100;
-  }
 
   // 计算模糊匹配分数
   function calculateFuzzyMatch(query, text) {
@@ -5205,16 +5031,6 @@ document.addEventListener('DOMContentLoaded', function () {
     const maxLength = Math.max(query.length, text.length);
     const distance = levenshteinDistance(query, text);
     return (maxLength - distance) / maxLength;
-  }
-  // 辅助函数：查找部分词匹配数量
-  function findPartialMatches(word, text) {
-    let count = 0;
-    let pos = 0;
-    while ((pos = text.indexOf(word.substring(0, Math.ceil(word.length * 0.7)), pos)) !== -1) {
-      count++;
-      pos += 1;
-    }
-    return count;
   }
 
   // Levenshtein 距离计算
@@ -5518,7 +5334,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // 获取设置
     const settings = await new Promise(resolve => {
       chrome.storage.sync.get(
-        ['showHistorySuggestions', 'showBookmarkSuggestions'],
+        ['showHistorySuggestions', 'showBookmarkSuggestions', 'showPromptSuggestions'],
         resolve
       );
     });
@@ -5550,9 +5366,9 @@ document.addEventListener('DOMContentLoaded', function () {
       }));
     }
 
-    // 获取提示词建议（如果 PromptPro 搜索已初始化）
+    // 获取提示词建议（如果 PromptPro 搜索已初始化且设置允许）
     let promptSuggestions = [];
-    if (window.promptProSearch && window.promptProSearch.initialized) {
+    if (settings.showPromptSuggestions !== false && window.promptProSearch && window.promptProSearch.initialized) {
       const promptResults = window.promptProSearch.search(query);
       // 只取前5个最高分的提示词，使用对数函数压缩分数范围
       promptSuggestions = promptResults.slice(0, 5).map(prompt => ({
@@ -5564,10 +5380,6 @@ document.addEventListener('DOMContentLoaded', function () {
         relevance: Math.round(Math.log((prompt._score || 0) + 1) * 12),
         promptData: prompt
       }));
-    } else {
-      if (!window.promptProSearch) {
-      } else if (!window.promptProSearch.initialized) {
-      }
     }
 
     // 合并所有建议
@@ -6078,7 +5890,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // 首先检查设置
     const settings = await new Promise(resolve => {
       chrome.storage.sync.get(
-        ['showHistorySuggestions', 'showBookmarkSuggestions'],
+        ['showHistorySuggestions', 'showBookmarkSuggestions', 'showPromptSuggestions'],
         resolve
       );
     });
@@ -6113,6 +5925,18 @@ document.addEventListener('DOMContentLoaded', function () {
         url: item.url,
         type: 'bookmark',
         relevance: 1
+      })));
+    }
+
+    // 如果启用了提示词建议，添加最近的提示词
+    if (settings.showPromptSuggestions !== false && window.promptProSearch && window.promptProSearch.initialized) {
+      const recentPrompts = window.promptProSearch.getRecentPrompts ? window.promptProSearch.getRecentPrompts(10) : [];
+      suggestions = suggestions.concat(recentPrompts.map(prompt => ({
+        text: prompt.title,
+        url: `promptpro://edit/${prompt.prompt_id}`,
+        type: 'prompt',
+        relevance: 0.5,
+        promptData: prompt
       })));
     }
 

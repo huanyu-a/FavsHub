@@ -709,6 +709,10 @@
         "message": "ブックマーク候補を表示",
         "description": "ブックマーク候補を表示するオプション"
     },
+    "showPromptSuggestions": {
+        "message": "プロンプト候補を表示",
+        "description": "プロンプト候補を表示するオプション"
+    },
     "containerWidthTitle": {
         "message": "ブックマークコンテナの幅",
         "description": "ブックマークコンテナの幅設定のタイトル"

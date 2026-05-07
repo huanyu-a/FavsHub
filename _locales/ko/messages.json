@@ -709,6 +709,10 @@
         "message": "북마크 제안 표시",
         "description": "북마크 제안 표시 옵션"
     },
+    "showPromptSuggestions": {
+        "message": "프롬프트 제안 표시",
+        "description": "프롬프트 제안 표시 옵션"
+    },
     "containerWidthTitle": {
         "message": "북마크 컨테이너 너비",
         "description": "북마크 컨테이너 너비 설정 제목"

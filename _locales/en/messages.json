@@ -672,6 +672,10 @@
         "message": "Show Bookmark Suggestions",
         "description": "Option to show bookmark suggestions"
     },
+    "showPromptSuggestions": {
+        "message": "Show Prompt Suggestions",
+        "description": "Option to show prompt suggestions"
+    },
     "containerWidthTitle": {
         "message": "Bookmark Container Width",
         "description": "Title for bookmark container width setting"

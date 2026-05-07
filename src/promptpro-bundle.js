@@ -215,7 +215,7 @@ class PromptProDB {
     const now = Date.now();
     const contentChanged = prompt.content !== data.content;
     if (contentChanged && prompt.content) {
-      await this.saveVersion(promptId, prompt.content, prompt.current_version);
+      await this.saveVersion(promptId, prompt.content, prompt.current_version, prompt.created_at);
       const versionParts = prompt.current_version.split('.');
       if (versionParts.length === 3) { versionParts[2] = parseInt(versionParts[2]) + 1; prompt.current_version = versionParts.join('.'); }
       prompt.version_count = (prompt.version_count || 0) + 1;
@@ -243,10 +243,10 @@ class PromptProDB {
     return { is_favorite: prompt.is_favorite };
   }
 
-  static async saveVersion(promptId, content, versionNumber) {
+  static async saveVersion(promptId, content, versionNumber, createdAt) {
     const existing = await this.getByIndex(STORAGE_KEYS.VERSIONS, 'prompt_id', promptId);
     if (existing.some(v => v.version_number === versionNumber && Math.abs(v.created_at - Date.now()) < 1000)) return;
-    await this.put(STORAGE_KEYS.VERSIONS, { version_id: this.generateUUID(), prompt_id: promptId, content, version_number: versionNumber, created_at: Date.now() });
+    await this.put(STORAGE_KEYS.VERSIONS, { version_id: this.generateUUID(), prompt_id: promptId, content, version_number: versionNumber, created_at: createdAt || Date.now() });
   }
 
   static async getVersions(promptId) {
@@ -261,7 +261,7 @@ class PromptProDB {
     if (!prompt) return false;
     const existing = await this.getByIndex(STORAGE_KEYS.VERSIONS, 'prompt_id', promptId);
     if (!existing.some(v => v.version_number === prompt.current_version && v.content === prompt.content) && prompt.content) {
-      await this.saveVersion(promptId, prompt.content, prompt.current_version);
+      await this.saveVersion(promptId, prompt.content, prompt.current_version, prompt.created_at);
     }
     prompt.content = version.content;
     prompt.current_version = version.version_number;

@@ -625,6 +625,10 @@
         "message": "Lesezeichenvorschläge anzeigen",
         "description": "Option zum Anzeigen von Lesezeichenvorschlägen"
     },
+    "showPromptSuggestions": {
+        "message": "Prompt-Vorschläge anzeigen",
+        "description": "Option zum Anzeigen von Prompt-Vorschlägen"
+    },
     "containerWidthTitle": {
         "message": "Lesezeichen-Container-Breite",
         "description": "Titel für Lesezeichen-Container-Breite-Einstellungen"

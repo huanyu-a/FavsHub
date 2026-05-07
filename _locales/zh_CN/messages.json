@@ -767,6 +767,10 @@
         "message": "显示书签建议",
         "description": "显示书签建议选项"
     },
+    "showPromptSuggestions": {
+        "message": "显示提示词建议",
+        "description": "显示提示词建议选项"
+    },
     "containerWidthTitle": {
         "message": "书签容器宽度"
     },

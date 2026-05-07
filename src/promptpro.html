@@ -50,6 +50,11 @@
             min-width: 0;
             overflow-y: auto;
             overflow-x: hidden;
+            scrollbar-width: none; /* Firefox */
+            -ms-overflow-style: none; /* IE/Edge */
+        }
+        .main-content::-webkit-scrollbar {
+            display: none; /* Chrome/Safari */
         }
 
         /* ========== 侧边栏 ========== */
@@ -916,6 +921,30 @@
         </div>
     </div>
 
+    <!-- 备份目录设置对话框 -->
+    <div class="modal" id="backupSetupModal">
+        <div class="modal-content" style="max-width: 420px;">
+            <div class="modal-header">
+                <h2>设置备份目录</h2>
+            </div>
+            <div class="modal-body">
+                <p style="margin-bottom: 1rem; color: var(--text-secondary, #64748b); font-size: 14px;">
+                    为了保护您的提示词数据，建议设置一个本地备份目录。系统会自动备份您的提示词、文件夹和标签。
+                </p>
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <button class="btn btn-primary" id="setupBackupFolderBtn" style="white-space: nowrap;">
+                        选择目录
+                    </button>
+                    <span id="setupFolderName" style="font-size: 13px; color: var(--text-secondary, #94a3b8);">未选择</span>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" id="skipBackupSetupBtn">稍后设置</button>
+                <button class="btn btn-primary" id="confirmBackupSetupBtn" disabled>确认</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast通知 -->
     <div class="toast-container" id="toastContainer"></div>
 
@@ -934,5 +963,6 @@
     <script type="module" src="backup-manager.js"></script>
     <script src="promptpro-bundle.js"></script>
     <script type="module" src="promptpro-export.js"></script>
+    <script type="module" src="promptpro-backup-setup.js"></script>
 </body>
 </html>
