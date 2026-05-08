@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>FavsHub - OAuth</title>
+</head>
+<body>
+<script>
+(function() {
+  var hash = window.location.hash.substring(1);
+  var params = new URLSearchParams(hash);
+  var accessToken = params.get('access_token');
+  var expiresIn = params.get('expires_in');
+
+  if (accessToken) {
+    // 从 URL 参数获取扩展 ID，构造 chromiumapp.org 回调地址
+    var extId = location.search.match(/ext_id=([^&]+)/);
+    if (extId) {
+      var callbackUrl = 'https://' + extId[1] + '.chromiumapp.org/?access_token=' + encodeURIComponent(accessToken);
+      if (expiresIn) callbackUrl += '&expires_in=' + encodeURIComponent(expiresIn);
+      window.location.replace(callbackUrl);
+    } else {
+      document.body.innerText = '授权成功，请关闭此窗口返回扩展。';
+    }
+  } else {
+    document.body.innerText = '授权失败：未获取到 token。';
+  }
+})();
+</script>
+</body>
+</html>

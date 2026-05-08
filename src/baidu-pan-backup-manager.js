@@ -9,6 +9,7 @@
 // ── 应用凭据（百度开放平台注册） ──
 
 const APP_KEY = 'vk589M5xfVxbIjM80JZdxVPG2ye6ok6u';
+const RELAY_URL = 'https://huanyu-a.github.io/FavsHub/src/oauth-callback.html';
 const REMOTE_DIR = '/apps/FavsHub';
 
 // ── 轻量 MD5 实现（用于百度 API block_list 参数） ──
@@ -135,7 +136,9 @@ class BaiduPanBackupManager {
   }
 
   async startOAuth() {
-    const redirectUri = this._getRedirectUri();
+    // 中继页面需要知道扩展 ID 才能跳转回 chromiumapp.org
+    const extId = chrome.runtime.id;
+    const redirectUri = RELAY_URL + '?ext_id=' + encodeURIComponent(extId);
     const authUrl = new URL('https://openapi.baidu.com/oauth/2.0/authorize');
     authUrl.searchParams.set('response_type', 'token');
     authUrl.searchParams.set('client_id', APP_KEY);
@@ -158,11 +161,10 @@ class BaiduPanBackupManager {
       responseUrl = await this._oauthViaPopup(authUrl.toString(), redirectUri);
     }
 
-    // 简化模式：access_token 在 fragment（#）中
+    // 中继页面将 token 以 query params 形式传回 chromiumapp.org
     const url = new URL(responseUrl);
-    const hashParams = new URLSearchParams(url.hash.substring(1));
-    const accessToken = hashParams.get('access_token');
-    const expiresIn = parseInt(hashParams.get('expires_in'), 10);
+    const accessToken = url.searchParams.get('access_token');
+    const expiresIn = parseInt(url.searchParams.get('expires_in'), 10);
 
     if (!accessToken) throw new Error('AUTH_FAILED');
 
@@ -173,6 +175,8 @@ class BaiduPanBackupManager {
   }
 
   _oauthViaPopup(authUrl, redirectUri) {
+    // 中继方案：popup 最终会跳转到 chromiumapp.org（非 RELAY_URL）
+    const extRedirect = this._getRedirectUri();
     return new Promise((resolve, reject) => {
       const popup = window.open(authUrl, 'baidu-oauth', 'width=600,height=700');
       if (!popup) return reject(new Error('AUTH_FAILED'));
@@ -185,7 +189,7 @@ class BaiduPanBackupManager {
             return;
           }
           const currentUrl = popup.location.href;
-          if (currentUrl.startsWith(redirectUri)) {
+          if (currentUrl.startsWith(extRedirect)) {
             clearInterval(timer);
             popup.close();
             resolve(currentUrl);

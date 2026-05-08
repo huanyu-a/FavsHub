@@ -52,6 +52,7 @@
   "web_accessible_resources": [
     {
       "resources": [
+        "src/oauth-callback.html",
         "_favicon/*",
         "src/fonts/*",
         "src/promptpro.html",
