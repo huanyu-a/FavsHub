@@ -926,5 +926,57 @@
     "folderSelected": {
         "message": "Selected: $1",
         "description": "Folder selected toast"
+    },
+    "baiduPanTitle": {
+        "message": "Baidu Pan Cloud Backup",
+        "description": "Baidu Pan cloud backup section title"
+    },
+    "baiduPanDescription": {
+        "message": "Back up PromptPro data to Baidu Pan. You need to register a Baidu developer app.",
+        "description": "Baidu Pan backup description"
+    },
+    "baiduPanConnect": {
+        "message": "Connect to Baidu Pan",
+        "description": "Connect to Baidu Pan button"
+    },
+    "baiduPanDisconnect": {
+        "message": "Disconnect",
+        "description": "Disconnect Baidu Pan button"
+    },
+    "baiduPanAutoBackup": {
+        "message": "Cloud Auto Backup",
+        "description": "Cloud auto backup toggle"
+    },
+    "baiduPanUploadNow": {
+        "message": "Upload Now",
+        "description": "Upload to Baidu Pan now button"
+    },
+    "baiduPanCloudHistory": {
+        "message": "Cloud Backup History",
+        "description": "Cloud backup history title"
+    },
+    "baiduPanNoHistory": {
+        "message": "No cloud backup records",
+        "description": "No cloud backup history"
+    },
+    "baiduPanConnected": {
+        "message": "Connected",
+        "description": "Baidu Pan connected status"
+    },
+    "baiduPanDisconnected": {
+        "message": "Not connected",
+        "description": "Baidu Pan disconnected status"
+    },
+    "baiduPanTokenExpired": {
+        "message": "Session expired, please reconnect",
+        "description": "Baidu Pan token expired status"
+    },
+    "baiduPanUploadSuccess": {
+        "message": "Cloud backup successful: $1",
+        "description": "Cloud backup success toast"
+    },
+    "baiduPanUploadFailed": {
+        "message": "Cloud backup failed: $1",
+        "description": "Cloud backup failure toast"
     }
 }

@@ -1060,6 +1060,14 @@ class SettingsManager {
     } catch (err) {
       console.warn('[Settings] 自动备份检查失败:', err);
     }
+
+    // 百度网盘云端备份
+    try {
+      const { baiduPanSettingsManager } = await import('./baidu-pan-settings.js');
+      await baiduPanSettingsManager.init();
+    } catch (err) {
+      console.warn('[Settings] 百度网盘备份模块加载失败:', err);
+    }
   }
 
   async renderBackupHistory() {

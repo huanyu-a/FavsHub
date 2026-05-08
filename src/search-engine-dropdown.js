@@ -13,6 +13,7 @@ const ALL_ENGINES = [
   { name: 'shenma', icon: '../images/shenma-logo.png', label: 'shenmaLabel', url: 'https://yz.m.sm.cn/s?q=', aliases: ['神马'] },
 //  { name: 'kimi', icon: '../images/kimi-logo.svg', label: 'kimiLabel', url: 'https://kimi.moonshot.cn/?q=', aliases: ['Kimi'] },
 //  { name: 'doubao', icon: '../images/doubao-logo.png', label: 'doubaoLabel', url: 'https://www.doubao.com/?q=', aliases: ['豆包'] },
+  { name: 'zhida', icon: '../images/zhida-logo.png', label: 'zhidaLabel', url: 'https://zhida.zhihu.com/search?q=', aliases: ['知乎直答'] },
   { name: 'qwen', icon: '../images/qwen-logo.png', label: 'qwenLabel', url: 'https://www.qianwen.com/chat/?q=', aliases: ['千问'] },
   { name: 'iflow', icon: '../images/iflow-logo.png', label: 'iflowLabel', url: 'https://iflow.cn/answers/', aliases: ['心流'] },
   { name: 'chatgpt', icon: '../images/chatgpt-logo.svg', label: 'chatgptLabel', url: 'https://chat.openai.com/?q=', aliases: ['ChatGPT'] },
@@ -35,8 +36,8 @@ const ALL_ENGINES = [
 
 // 定义搜索引擎分类
 const ENGINE_CATEGORIES = {
-  AI: ['kimi', 'doubao', 'qwen', 'iflow', 'chatgpt', 'perplexity', 'claude', 'felo', 'metaso', 'semanticscholar', 'deepseek', 'grok'],
-  SEARCH: ['google', 'bing', 'baidu', 'baidu_m', 'toutiao', 'sougou', '360', 'shenma', 'duckduckgo', 'yahoo', 'yandex'],
+  AI: ['kimi', 'doubao', 'zhida', 'qwen', 'iflow', 'chatgpt', 'perplexity', 'claude', 'felo', 'metaso', 'semanticscholar', 'deepseek', 'grok'],
+  SEARCH: ['baidu', 'google', 'bing', 'baidu_m', 'toutiao', 'sougou', '360', 'shenma', 'duckduckgo', 'yahoo', 'yandex'],
   SOCIAL: ['xiaohongshu', 'jike', 'zhihu', 'douban', 'bilibili', 'github']
 };
 

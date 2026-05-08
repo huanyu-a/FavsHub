@@ -291,6 +291,10 @@
         "message": "豆包",
         "description": "豆包搜索引擎标签"
     },
+    "zhidaLabel": {
+        "message": "知乎直答",
+        "description": "知乎直答搜索引擎标签"
+    },
     "qwenLabel": {
         "message": "千问",
         "description": "千问搜索引擎标签"
@@ -960,5 +964,57 @@
     "folderSelected": {
         "message": "已选择：$1",
         "description": "文件夹选择成功提示"
+    },
+    "baiduPanTitle": {
+        "message": "百度网盘云端备份",
+        "description": "百度网盘云端备份区域标题"
+    },
+    "baiduPanDescription": {
+        "message": "将 PromptPro 数据备份到百度网盘，需要自行注册百度开放平台应用。",
+        "description": "百度网盘备份功能描述"
+    },
+    "baiduPanConnect": {
+        "message": "连接百度网盘",
+        "description": "连接百度网盘按钮文本"
+    },
+    "baiduPanDisconnect": {
+        "message": "断开连接",
+        "description": "断开百度网盘连接按钮文本"
+    },
+    "baiduPanAutoBackup": {
+        "message": "云端自动备份",
+        "description": "云端自动备份开关标签"
+    },
+    "baiduPanUploadNow": {
+        "message": "立即上传",
+        "description": "立即上传到百度网盘按钮文本"
+    },
+    "baiduPanCloudHistory": {
+        "message": "云端备份记录",
+        "description": "云端备份历史记录标题"
+    },
+    "baiduPanNoHistory": {
+        "message": "暂无云端备份记录",
+        "description": "无云端备份记录时的提示"
+    },
+    "baiduPanConnected": {
+        "message": "已连接",
+        "description": "百度网盘已连接状态"
+    },
+    "baiduPanDisconnected": {
+        "message": "未连接",
+        "description": "百度网盘未连接状态"
+    },
+    "baiduPanTokenExpired": {
+        "message": "登录已过期，请重新连接",
+        "description": "百度网盘 token 过期状态"
+    },
+    "baiduPanUploadSuccess": {
+        "message": "云端备份成功：$1",
+        "description": "云端备份成功提示"
+    },
+    "baiduPanUploadFailed": {
+        "message": "云端备份失败：$1",
+        "description": "云端备份失败提示"
     }
 }

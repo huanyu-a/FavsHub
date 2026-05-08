@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "FavsHub",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "__MSG_extDescription__",
   "default_locale": "en",
   "chrome_url_overrides": {
@@ -16,7 +16,8 @@
     "management",
     "sidePanel",
     "commands",
-    "tabs"
+    "tabs",
+    "identity"
   ],
   "host_permissions": [
     "https://*/*",

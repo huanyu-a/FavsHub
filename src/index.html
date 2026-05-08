@@ -501,6 +501,45 @@
             <div id="backup-history-list" class="backup-history-list">
               <p style="color: var(--text-secondary, #888); font-size: 13px;">暂无备份记录</p>
             </div>
+
+            <!-- 百度网盘云端备份 -->
+            <hr style="margin: 24px 0; border: none; border-top: 1px solid var(--border-color, #eee);">
+
+            <div id="baidu-pan-section">
+              <h3 class="settings-modal-subtitle">百度网盘云端备份</h3>
+              <p class="settings-description">将 FavsHub 数据备份到你的百度网盘，授权后即可使用。</p>
+
+              <div id="baidu-pan-status" style="margin-bottom: 12px;">
+                <span id="baidu-pan-status-text" style="font-size: 13px; color: var(--text-secondary, #888);">未连接</span>
+              </div>
+
+              <!-- 未连接：一键授权 -->
+              <button id="baidu-pan-connect-btn" class="custom-button" style="margin-bottom: 16px;">连接百度网盘</button>
+
+              <!-- 已连接：备份控制 -->
+              <div id="baidu-pan-connected" style="display: none;">
+                <div class="setting-option">
+                  <label for="enable-baidu-auto-backup" class="switch-label">云端自动备份</label>
+                  <label class="switch">
+                    <input type="checkbox" id="enable-baidu-auto-backup">
+                    <span class="slider round"></span>
+                  </label>
+                </div>
+
+                <h4 class="settings-section-title" style="margin-top: 16px;">手动上传</h4>
+                <div class="setting-option" style="display: flex; align-items: center; gap: 12px;">
+                  <button id="baidu-manual-backup-btn" class="custom-button">立即上传</button>
+                  <span id="baidu-last-backup-time" style="color: var(--text-secondary, #888); font-size: 13px;">上次备份：未备份</span>
+                </div>
+
+                <h4 class="settings-section-title" style="margin-top: 16px;">云端备份记录</h4>
+                <div id="baidu-backup-history-list" class="backup-history-list">
+                  <p style="color: var(--text-secondary, #888); font-size: 13px;">暂无云端备份记录</p>
+                </div>
+
+                <button id="baidu-pan-disconnect-btn" style="margin-top: 12px; background: none; border: 1px solid var(--border-color, #ddd); padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; color: var(--text-secondary, #888);">断开连接</button>
+              </div>
+            </div>
           </div>
 
         </div>
