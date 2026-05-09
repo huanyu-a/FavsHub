@@ -128,6 +128,10 @@ class BaiduPanBackupManager {
 
   // ── OAuth 流程（简化模式） ──
 
+  _isExtensionUnpacked() {
+    return chrome.runtime.id.length !== 32; // Unpacked extensions have human-readable IDs
+  }
+
   _getRedirectUri() {
     if (chrome.identity?.getRedirectURL) {
       return chrome.identity.getRedirectURL();
@@ -136,6 +140,11 @@ class BaiduPanBackupManager {
   }
 
   async startOAuth() {
+    // Check if we're running an unpacked extension and log appropriately
+    if (this._isExtensionUnpacked()) {
+      console.log('[BaiduPan] Extension is running unpacked, may affect OAuth flow');
+    }
+
     // 中继页面需要知道扩展 ID 才能跳转回 chromiumapp.org
     const extId = chrome.runtime.id;
     const redirectUri = RELAY_URL + '?ext_id=' + encodeURIComponent(extId);
@@ -154,56 +163,100 @@ class BaiduPanBackupManager {
           url: authUrl.toString(),
           interactive: true
         });
+
+        // Log the response URL for debugging
+        console.log('[BaiduPan] OAuth response URL:', responseUrl);
       } catch (err) {
-        throw new Error('AUTH_FAILED');
+        console.error('[BaiduPan] launchWebAuthFlow error:', err);
+        throw new Error('AUTH_FAILED: ' + (err.message || 'OAuth flow failed'));
       }
     } else {
+      console.log('[BaiduPan] Using popup fallback for OAuth');
       responseUrl = await this._oauthViaPopup(authUrl.toString(), redirectUri);
     }
 
     // 中继页面将 token 以 query params 形式传回 chromiumapp.org
-    const url = new URL(responseUrl);
+    let url;
+    try {
+      url = new URL(responseUrl);
+    } catch (err) {
+      console.error('[BaiduPan] Failed to parse OAuth response URL:', responseUrl, err);
+      throw new Error('AUTH_FAILED: Invalid response URL');
+    }
+
     const accessToken = url.searchParams.get('access_token');
     const expiresIn = parseInt(url.searchParams.get('expires_in'), 10);
 
-    if (!accessToken) throw new Error('AUTH_FAILED');
+    if (!accessToken) {
+      console.error('[BaiduPan] No access_token found in response URL:', url.toString());
+      console.error('[BaiduPan] Available search params:', Array.from(url.searchParams.keys()));
+      throw new Error('AUTH_FAILED: No access token received');
+    }
 
     await this.setConfig({
       accessToken,
       expiresAt: Date.now() + (expiresIn || 2592000) * 1000
     });
+
+    console.log('[BaiduPan] Successfully obtained access token, expires at:', new Date(Date.now() + (expiresIn || 2592000) * 1000));
   }
 
   _oauthViaPopup(authUrl, redirectUri) {
     // 中继方案：popup 最终会跳转到 chromiumapp.org（非 RELAY_URL）
     const extRedirect = this._getRedirectUri();
     return new Promise((resolve, reject) => {
-      const popup = window.open(authUrl, 'baidu-oauth', 'width=600,height=700');
-      if (!popup) return reject(new Error('AUTH_FAILED'));
+      let popup;
+
+      try {
+        popup = window.open(authUrl, 'baidu-oauth', 'width=600,height=700');
+        if (!popup) {
+          console.error('[BaiduPan] Failed to open OAuth popup window');
+          reject(new Error('AUTH_FAILED: Could not open authorization window'));
+          return;
+        }
+      } catch (err) {
+        console.error('[BaiduPan] Error opening OAuth popup:', err);
+        reject(new Error('AUTH_FAILED: Error opening authorization window'));
+        return;
+      }
 
       const timer = setInterval(() => {
         try {
           if (popup.closed) {
             clearInterval(timer);
-            reject(new Error('AUTH_FAILED'));
+            console.log('[BaiduPan] OAuth popup was closed by user');
+            reject(new Error('AUTH_FAILED: User closed the authorization window'));
             return;
           }
+
           const currentUrl = popup.location.href;
           if (currentUrl.startsWith(extRedirect)) {
             clearInterval(timer);
             popup.close();
+            console.log('[BaiduPan] OAuth successful, received redirect URL');
             resolve(currentUrl);
           }
-        } catch {
+        } catch (error) {
           // 跨域时无法读取 popup.location，继续轮询
+          // Only log if it's not a cross-origin error
+          if (!error.message.includes('cross-origin') && !error.message.includes('CORS')) {
+            console.log('[BaiduPan] Cross-origin error during popup monitoring (expected)', error.message);
+          }
         }
       }, 500);
 
       setTimeout(() => {
         clearInterval(timer);
-        try { popup.close(); } catch {}
-        reject(new Error('AUTH_FAILED'));
-      }, 300000);
+        try {
+          if (popup && !popup.closed) {
+            popup.close();
+          }
+        } catch (e) {
+          console.warn('[BaiduPan] Error closing popup:', e);
+        }
+        console.warn('[BaiduPan] OAuth timeout after 5 minutes');
+        reject(new Error('AUTH_FAILED: Authorization timed out'));
+      }, 300000); // 5分钟超时
     });
   }
 
@@ -220,6 +273,15 @@ class BaiduPanBackupManager {
 
   async disconnect() {
     await this.clearConfig();
+    console.log('[BaiduPan] Disconnected and cleared stored credentials');
+  }
+
+  // Added a method to force refresh the token
+  async refreshConnection() {
+    // Disconnect first
+    await this.disconnect();
+    // Then initiate a new OAuth flow
+    await this.startOAuth();
   }
 
   // ── 百度网盘 API ──

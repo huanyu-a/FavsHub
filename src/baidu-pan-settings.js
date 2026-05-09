@@ -127,7 +127,22 @@ class BaiduPanSettingsManager {
       await this.renderConnectionStatus();
     } catch (err) {
       console.error('[BaiduPan] 连接失败:', err);
-      this._showToast('授权失败，请重试');
+      let errorMessage = '授权失败，请重试';
+
+      // Provide more specific error messages
+      if (err.message.includes('USER_CANCEL')) {
+        errorMessage = '用户取消了授权';
+      } else if (err.message.includes('INTERACTION_REQUIRED')) {
+        errorMessage = '需要用户进行身份验证';
+      } else if (err.message.includes('INVALID_CLIENT')) {
+        errorMessage = '客户端凭证无效';
+      } else if (err.message.includes('ACCESS_DENIED')) {
+        errorMessage = '访问被拒绝';
+      } else if (err.message.includes('AUTH_FAILED')) {
+        errorMessage = 'OAuth 认证失败，请确保网络连接正常后重试';
+      }
+
+      this._showToast(errorMessage);
     } finally {
       this.connectBtn.disabled = false;
       this.connectBtn.textContent = '连接百度网盘';
