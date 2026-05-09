@@ -118,6 +118,9 @@ class BaiduPanSettingsManager {
   // ── 操作处理 ──
 
   async handleConnect() {
+    // 在开始新授权前，先清除现有的认证信息，确保弹出新的授权窗口
+    await this.manager.disconnect();
+
     this.connectBtn.disabled = true;
     this.connectBtn.textContent = '授权中...';
 
