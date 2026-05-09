@@ -227,19 +227,23 @@ class BaiduPanBackupManager {
   async precreate(remotePath, size, blockMd5) {
     const token = await this.getValidToken();
     const url = `https://pan.baidu.com/rest/2.0/xpan/file?method=precreate&access_token=${token}`;
+    const body = {
+      path: remotePath,
+      size: String(size),
+      isdir: '0',
+      autoinit: '1',
+      rtype: '3',
+      block_list: JSON.stringify([blockMd5]),
+      'content-md5': blockMd5
+    };
+    console.log('[BaiduPan] precreate request:', { url, body });
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        path: remotePath,
-        size: String(size),
-        isdir: '0',
-        autoinit: '1',
-        rtype: '3',
-        block_list: JSON.stringify([blockMd5])
-      }).toString()
+      body: new URLSearchParams(body).toString()
     });
     const data = await resp.json();
+    console.log('[BaiduPan] precreate response:', data);
     if (data.errno && data.errno !== 0) {
       const err = new Error('API_ERROR');
       err.errno = data.errno;
@@ -248,13 +252,35 @@ class BaiduPanBackupManager {
     return data;
   }
 
+  async locateUploadDomain(remotePath, uploadid) {
+    const token = await this.getValidToken();
+    const url = `https://d.pcs.baidu.com/rest/2.0/pcs/file?method=locateupload&appid=250528&access_token=${token}&path=${encodeURIComponent(remotePath)}&uploadid=${encodeURIComponent(uploadid)}&upload_version=2.0`;
+    console.log('[BaiduPan] locateUploadDomain request:', url);
+    const resp = await fetch(url);
+    const data = await resp.json();
+    console.log('[BaiduPan] locateUploadDomain response:', data);
+    if (data.error_code && data.error_code !== 0) {
+      const err = new Error('API_ERROR');
+      err.errno = data.error_code;
+      throw err;
+    }
+    const servers = data.servers || [];
+    const httpsServer = servers.find(s => s.server.startsWith('https://'));
+    const domain = httpsServer ? httpsServer.server : 'https://d.pcs.baidu.com';
+    console.log('[BaiduPan] upload domain:', domain);
+    return domain;
+  }
+
   async uploadBlock(remotePath, uploadid, blob) {
     const token = await this.getValidToken();
-    const url = `https://d.pcs.baidu.com/rest/2.0/pcs/superfile2?method=upload&access_token=${token}&path=${encodeURIComponent(remotePath)}&type=tmpfile&uploadid=${uploadid}&partseq=0`;
+    const uploadDomain = await this.locateUploadDomain(remotePath, uploadid);
+    const url = `${uploadDomain}/rest/2.0/pcs/superfile2?method=upload&access_token=${token}&path=${encodeURIComponent(remotePath)}&type=tmpfile&uploadid=${uploadid}&partseq=0`;
+    console.log('[BaiduPan] upload request:', url, 'size:', blob.size);
     const formData = new FormData();
     formData.append('file', blob, 'backup.json');
     const resp = await fetch(url, { method: 'POST', body: formData });
     const data = await resp.json();
+    console.log('[BaiduPan] upload response:', data);
     if (data.errno && data.errno !== 0) {
       const err = new Error('API_ERROR');
       err.errno = data.errno;
@@ -266,19 +292,23 @@ class BaiduPanBackupManager {
   async createFile(remotePath, size, uploadid, blockMd5) {
     const token = await this.getValidToken();
     const url = `https://pan.baidu.com/rest/2.0/xpan/file?method=create&access_token=${token}`;
+    const body = {
+      path: remotePath,
+      size: String(size),
+      isdir: '0',
+      rtype: '3',
+      uploadid,
+      block_list: JSON.stringify([blockMd5]),
+      'content-md5': blockMd5
+    };
+    console.log('[BaiduPan] createFile request:', { url, body });
     const resp = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        path: remotePath,
-        size: String(size),
-        isdir: '0',
-        rtype: '3',
-        uploadid,
-        block_list: JSON.stringify([blockMd5])
-      }).toString()
+      body: new URLSearchParams(body).toString()
     });
     const data = await resp.json();
+    console.log('[BaiduPan] createFile response:', data);
     if (data.errno && data.errno !== 0) {
       const err = new Error('API_ERROR');
       err.errno = data.errno;
@@ -295,10 +325,35 @@ class BaiduPanBackupManager {
     return await resp.json();
   }
 
+  async getFileDlink(fsId) {
+    const token = await this.getValidToken();
+    const url = `https://pan.baidu.com/rest/2.0/xpan/multimedia?method=filemetas&access_token=${token}&fsids=[${fsId}]&dlink=1`;
+    console.log('[BaiduPan] getFileDlink request:', url);
+    const resp = await fetch(url);
+    const data = await resp.json();
+    console.log('[BaiduPan] getFileDlink response:', data);
+    if (data.errno && data.errno !== 0) {
+      const err = new Error('API_ERROR');
+      err.errno = data.errno;
+      throw err;
+    }
+    const list = data.list || [];
+    if (list.length === 0 || !list[0].dlink) {
+      throw new Error('NO_DLINK');
+    }
+    return list[0].dlink;
+  }
+
   async downloadFile(fsId) {
     const token = await this.getValidToken();
-    const url = `https://d.pcs.baidu.com/rest/2.0/pcs/superfile2?method=download&fsid=${fsId}&access_token=${token}`;
-    const resp = await fetch(url);
+    // 第一步：获取 dlink 下载地址
+    const dlink = await this.getFileDlink(fsId);
+    // 第二步：用 dlink + access_token 下载，必须带 User-Agent: pan.baidu.com
+    const url = `${dlink}&access_token=${token}`;
+    console.log('[BaiduPan] download request:', url.substring(0, 100) + '...');
+    const resp = await fetch(url, {
+      headers: { 'User-Agent': 'pan.baidu.com' }
+    });
     if (!resp.ok) throw new Error('NETWORK_ERROR');
     return await resp.text();
   }
@@ -351,22 +406,21 @@ class BaiduPanBackupManager {
     const filename = `favshub-backup-${this._getTimestampCN()}.json`;
     const remotePath = `${REMOTE_DIR}/${filename}`;
 
-    const contentMd5 = md5hex(backupStr);
+    let contentMd5 = md5hex(backupStr);
     const blob = new Blob([backupStr], { type: 'application/json' });
     const size = blob.size;
 
     const precreateResult = await this.precreate(remotePath, size, contentMd5);
+    const uploadid = precreateResult.uploadid;
 
-    if (precreateResult.return_type === 2) {
-      await this.addBackupRecord({
-        filename, fsId: precreateResult.block_list?.[0] || 0,
-        timestamp: Date.now(), size, hash: currentHash
-      });
-      return filename;
+    if (precreateResult.return_type !== 2) {
+      // 需要分片上传
+      const uploadResult = await this.uploadBlock(remotePath, uploadid, blob);
+      // 用 upload 返回的 MD5 作为 block_list，确保一致性
+      contentMd5 = uploadResult.md5 || contentMd5;
     }
 
-    const uploadid = precreateResult.uploadid;
-    await this.uploadBlock(remotePath, uploadid, blob);
+    // 无论秒传还是分片上传，都需要调用 create 获取 fs_id
     const createResult = await this.createFile(remotePath, size, uploadid, contentMd5);
 
     await this.addBackupRecord({
