@@ -136,10 +136,18 @@ class BaiduPanBackupManager {
     if (chrome.identity?.getRedirectURL) {
       return chrome.identity.getRedirectURL();
     }
+    // 如果没有chrome.identity权限，则直接返回基于runtime.id的URL
     return `https://${chrome.runtime.id}.chromiumapp.org/`;
   }
 
   async startOAuth() {
+    // 检查是否具有必要的权限
+    if (chrome.identity) {
+      console.log('[BaiduPan] Chrome Identity API is available');
+    } else {
+      console.warn('[BaiduPan] Chrome Identity API is not available, falling back to popup');
+    }
+
     // Check if we're running an unpacked extension and log appropriately
     if (this._isExtensionUnpacked()) {
       console.log('[BaiduPan] Extension is running unpacked, may affect OAuth flow');
@@ -157,8 +165,10 @@ class BaiduPanBackupManager {
 
     let responseUrl;
 
+    // 尝试使用 chrome.identity API，但如果不可用则使用弹窗方式
     if (chrome.identity?.launchWebAuthFlow) {
       try {
+        console.log('[BaiduPan] Using chrome.identity.launchWebAuthFlow');
         responseUrl = await chrome.identity.launchWebAuthFlow({
           url: authUrl.toString(),
           interactive: true
@@ -168,7 +178,10 @@ class BaiduPanBackupManager {
         console.log('[BaiduPan] OAuth response URL:', responseUrl);
       } catch (err) {
         console.error('[BaiduPan] launchWebAuthFlow error:', err);
-        throw new Error('AUTH_FAILED: ' + (err.message || 'OAuth flow failed'));
+        console.log('[BaiduPan] Falling back to popup method');
+
+        // 如果 launchWebAuthFlow 失败，尝试弹窗方式
+        responseUrl = await this._oauthViaPopup(authUrl.toString(), redirectUri);
       }
     } else {
       console.log('[BaiduPan] Using popup fallback for OAuth');
