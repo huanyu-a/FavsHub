@@ -9,6 +9,7 @@
 // ── 应用凭据（百度开放平台注册） ──
 
 const APP_KEY = 'vk589M5xfVxbIjM80JZdxVPG2ye6ok6u';
+const APP_SECRET = 'w0RtiFzboAGJJFVLRSuokUeweDhsTPIx';
 const RELAY_URL = 'https://huanyu-a.github.io/FavsHub/src/oauth-callback.html';
 const REMOTE_DIR = '/apps/FavsHub';
 
@@ -164,21 +165,17 @@ class BaiduPanBackupManager {
     const extId = chrome.runtime.id;
     const redirectUri = RELAY_URL + '?ext_id=' + encodeURIComponent(extId);
     const authUrl = new URL('https://openapi.baidu.com/oauth/2.0/authorize');
-    authUrl.searchParams.set('response_type', 'token');
+    // 使用授权码模式，每次都会展示授权页面
+    authUrl.searchParams.set('response_type', 'code');
     authUrl.searchParams.set('client_id', APP_KEY);
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('scope', 'basic,netdisk');
     authUrl.searchParams.set('display', 'popup');
-    authUrl.searchParams.set('state', Math.random().toString(36).substring(2, 15) + Date.now());
 
-    let responseUrl;
+    console.log('[BaiduPan] Using popup method for authorization code flow');
+    const responseUrl = await this._oauthViaPopup(authUrl.toString(), redirectUri);
 
-    // 直接使用弹窗方式以确保用户能看到授权界面
-    // 即使有chrome.identity API，我们也优先使用弹窗方式以确保可见的授权体验
-    console.log('[BaiduPan] Using popup method to ensure visible authorization window');
-    responseUrl = await this._oauthViaPopup(authUrl.toString(), redirectUri);
-
-    // 中继页面将 token 以 query params 形式传回 chromiumapp.org
+    // 从回调 URL 中解析授权码
     let url;
     try {
       url = new URL(responseUrl);
@@ -187,21 +184,24 @@ class BaiduPanBackupManager {
       throw new Error('AUTH_FAILED: Invalid response URL');
     }
 
-    const accessToken = url.searchParams.get('access_token');
-    const expiresIn = parseInt(url.searchParams.get('expires_in'), 10);
-
-    if (!accessToken) {
-      console.error('[BaiduPan] No access_token found in response URL:', url.toString());
-      console.error('[BaiduPan] Available search params:', Array.from(url.searchParams.keys()));
-      throw new Error('AUTH_FAILED: No access token received');
+    const code = url.searchParams.get('code');
+    if (!code) {
+      console.error('[BaiduPan] No authorization code found in response URL:', url.toString());
+      throw new Error('AUTH_FAILED: No authorization code received');
     }
 
+    console.log('[BaiduPan] Got authorization code, exchanging for access token...');
+
+    // 用授权码换取 access_token
+    const tokenData = await this._exchangeCodeForToken(code, redirectUri);
+
     await this.setConfig({
-      accessToken,
-      expiresAt: Date.now() + (expiresIn || 2592000) * 1000
+      accessToken: tokenData.access_token,
+      refreshToken: tokenData.refresh_token,
+      expiresAt: Date.now() + (tokenData.expires_in || 2592000) * 1000
     });
 
-    console.log('[BaiduPan] Successfully obtained access token, expires at:', new Date(Date.now() + (expiresIn || 2592000) * 1000));
+    console.log('[BaiduPan] Successfully obtained access token, expires at:', new Date(Date.now() + (tokenData.expires_in || 2592000) * 1000));
   }
 
   _oauthViaPopup(authUrl, redirectUri) {
@@ -236,17 +236,16 @@ class BaiduPanBackupManager {
         reject(err);
       };
 
-      // 通过 postMessage 接收 oauth-callback.html 传回的 token
+      // 通过 postMessage 接收 oauth-callback.html 传回的 code 或 token
       const onMessage = (event) => {
         if (event.data && event.data.type === 'baidu-oauth-callback') {
-          console.log('[BaiduPan] Received token via postMessage');
-          const token = event.data.access_token;
-          const expiresIn = event.data.expires_in;
-          if (token) {
-            // 构造一个等效的响应 URL 供后续解析
-            const fakeUrl = 'https://localhost/?access_token=' + encodeURIComponent(token)
-              + '&expires_in=' + encodeURIComponent(expiresIn || '2592000');
-            finish(fakeUrl);
+          if (event.data.code) {
+            console.log('[BaiduPan] Received authorization code via postMessage');
+            finish('https://localhost/?code=' + encodeURIComponent(event.data.code));
+          } else if (event.data.access_token) {
+            console.log('[BaiduPan] Received access_token via postMessage');
+            finish('https://localhost/?access_token=' + encodeURIComponent(event.data.access_token)
+              + '&expires_in=' + encodeURIComponent(event.data.expires_in || '2592000'));
           }
         }
       };
@@ -287,12 +286,18 @@ class BaiduPanBackupManager {
             if (stored) {
               const data = JSON.parse(stored);
               localStorage.removeItem('baidu_pan_oauth_result');
-              if (data.access_token && (Date.now() - data.timestamp < 60000)) {
-                console.log('[BaiduPan] Received token via localStorage');
-                const fakeUrl = 'https://localhost/?access_token=' + encodeURIComponent(data.access_token)
-                  + '&expires_in=' + encodeURIComponent(data.expires_in || '2592000');
-                finish(fakeUrl);
-                return;
+              if (Date.now() - data.timestamp < 60000) {
+                if (data.code) {
+                  console.log('[BaiduPan] Received authorization code via localStorage');
+                  finish('https://localhost/?code=' + encodeURIComponent(data.code));
+                  return;
+                }
+                if (data.access_token) {
+                  console.log('[BaiduPan] Received token via localStorage');
+                  finish('https://localhost/?access_token=' + encodeURIComponent(data.access_token)
+                    + '&expires_in=' + encodeURIComponent(data.expires_in || '2592000'));
+                  return;
+                }
               }
             }
           } catch {}
@@ -300,8 +305,8 @@ class BaiduPanBackupManager {
           // 尝试读取同源弹窗的 URL（postMessage 可能还未触发）
           try {
             const currentUrl = popup.location.href;
-            if (currentUrl.includes('access_token=')) {
-              console.log('[BaiduPan] Detected access_token in popup URL');
+            if (currentUrl.includes('code=') || currentUrl.includes('access_token=')) {
+              console.log('[BaiduPan] Detected token/code in popup URL');
               finish(currentUrl);
             }
           } catch {}
@@ -331,6 +336,21 @@ class BaiduPanBackupManager {
       // 撤销失败不影响后续流程，继续发起新的授权
       console.warn('[BaiduPan] Revoke authorization failed (non-blocking):', err.message);
     }
+  }
+
+  async _exchangeCodeForToken(code, redirectUri) {
+    const url = `https://openapi.baidu.com/oauth/2.0/token?grant_type=authorization_code&code=${encodeURIComponent(code)}&client_id=${APP_KEY}&client_secret=${APP_SECRET}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+    console.log('[BaiduPan] Exchanging code for token...');
+    const resp = await fetch(url);
+    const data = await resp.json();
+    console.log('[BaiduPan] Token exchange response:', data);
+
+    if (!data.access_token) {
+      console.error('[BaiduPan] Token exchange failed:', data);
+      throw new Error('AUTH_FAILED: Failed to exchange code for token');
+    }
+
+    return data;
   }
 
   async getValidToken() {

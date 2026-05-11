@@ -7,37 +7,50 @@
 <body>
 <script>
 (function() {
-  var hash = window.location.hash.substring(1);
-  var params = new URLSearchParams(hash);
-  var accessToken = params.get('access_token');
-  var expiresIn = params.get('expires_in');
+  // 授权码模式：code 在查询参数中（?code=xxx）
+  var searchParams = new URLSearchParams(window.location.search);
+  var code = searchParams.get('code');
 
-  if (accessToken) {
-    // 写入 localStorage，供扩展弹窗轮询读取
+  // 兼容简化模式：access_token 在 hash fragment 中（#access_token=xxx）
+  var hashParams = new URLSearchParams(window.location.hash.substring(1));
+  var accessToken = hashParams.get('access_token');
+  var expiresIn = hashParams.get('expires_in');
+
+  if (code) {
+    // 授权码模式：传递 code
+    var payload = JSON.stringify({
+      code: code,
+      timestamp: Date.now()
+    });
+    try { localStorage.setItem('baidu_pan_oauth_result', payload); } catch(e) {}
+
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({ type: 'baidu-oauth-callback', code: code }, '*');
+      }
+    } catch(e) {}
+
+    document.body.innerText = '授权成功，正在返回扩展...';
+    setTimeout(function() { window.close(); }, 1500);
+  } else if (accessToken) {
+    // 简化模式兼容：传递 access_token
     var payload = JSON.stringify({
       access_token: accessToken,
       expires_in: expiresIn,
       timestamp: Date.now()
     });
-    try {
-      localStorage.setItem('baidu_pan_oauth_result', payload);
-    } catch(e) {}
+    try { localStorage.setItem('baidu_pan_oauth_result', payload); } catch(e) {}
 
-    // 同时尝试 postMessage（兼容旧方案）
     try {
       if (window.opener && !window.opener.closed) {
-        window.opener.postMessage({
-          type: 'baidu-oauth-callback',
-          access_token: accessToken,
-          expires_in: expiresIn
-        }, '*');
+        window.opener.postMessage({ type: 'baidu-oauth-callback', access_token: accessToken, expires_in: expiresIn }, '*');
       }
     } catch(e) {}
 
     document.body.innerText = '授权成功，正在返回扩展...';
     setTimeout(function() { window.close(); }, 1500);
   } else {
-    document.body.innerText = '授权失败：未获取到 token。';
+    document.body.innerText = '授权失败：未获取到授权码或 token。';
   }
 })();
 </script>
