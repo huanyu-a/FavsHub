@@ -166,11 +166,6 @@ class BaiduPanBackupManager {
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('scope', 'basic,netdisk');
     authUrl.searchParams.set('display', 'popup');
-    // 不再使用force_login，而是让OAuth流程检测浏览器登录状态
-    // authUrl.searchParams.set('force_login', '1');
-    // authUrl.searchParams.set('confirm_login', '1');
-    // 使用approval_prompt=force确保授权提示，但不强制登录
-    authUrl.searchParams.set('approval_prompt', 'force');
 
     let responseUrl;
 
