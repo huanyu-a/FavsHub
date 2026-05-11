@@ -141,6 +141,10 @@ class BaiduPanBackupManager {
   }
 
   async startOAuth() {
+    // 每次都强制执行完整的OAuth流程，而不是检查现有连接状态
+    // 先清除现有认证信息以确保弹出授权窗口
+    await this.clearConfig();
+
     // 检查是否具有必要的权限
     if (chrome.identity) {
       console.log('[BaiduPan] Chrome Identity API is available');
@@ -153,7 +157,7 @@ class BaiduPanBackupManager {
       console.log('[BaiduPan] Extension is running unpacked, may affect OAuth flow');
     }
 
-    // 中继页面需要知道扩展 ID 才能跳转回 chromiumapp.org
+    // 中继页面地址（GitHub Pages），授权后百度会重定向到此页面
     const extId = chrome.runtime.id;
     const redirectUri = RELAY_URL + '?ext_id=' + encodeURIComponent(extId);
     const authUrl = new URL('https://openapi.baidu.com/oauth/2.0/authorize');
@@ -162,31 +166,18 @@ class BaiduPanBackupManager {
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('scope', 'basic,netdisk');
     authUrl.searchParams.set('display', 'popup');
+    // 不再使用force_login，而是让OAuth流程检测浏览器登录状态
+    // authUrl.searchParams.set('force_login', '1');
+    // authUrl.searchParams.set('confirm_login', '1');
+    // 使用approval_prompt=force确保授权提示，但不强制登录
+    authUrl.searchParams.set('approval_prompt', 'force');
 
     let responseUrl;
 
-    // 尝试使用 chrome.identity API，但如果不可用则使用弹窗方式
-    if (chrome.identity?.launchWebAuthFlow) {
-      try {
-        console.log('[BaiduPan] Using chrome.identity.launchWebAuthFlow');
-        responseUrl = await chrome.identity.launchWebAuthFlow({
-          url: authUrl.toString(),
-          interactive: true
-        });
-
-        // Log the response URL for debugging
-        console.log('[BaiduPan] OAuth response URL:', responseUrl);
-      } catch (err) {
-        console.error('[BaiduPan] launchWebAuthFlow error:', err);
-        console.log('[BaiduPan] Falling back to popup method');
-
-        // 如果 launchWebAuthFlow 失败，尝试弹窗方式
-        responseUrl = await this._oauthViaPopup(authUrl.toString(), redirectUri);
-      }
-    } else {
-      console.log('[BaiduPan] Using popup fallback for OAuth');
-      responseUrl = await this._oauthViaPopup(authUrl.toString(), redirectUri);
-    }
+    // 直接使用弹窗方式以确保用户能看到授权界面
+    // 即使有chrome.identity API，我们也优先使用弹窗方式以确保可见的授权体验
+    console.log('[BaiduPan] Using popup method to ensure visible authorization window');
+    responseUrl = await this._oauthViaPopup(authUrl.toString(), redirectUri);
 
     // 中继页面将 token 以 query params 形式传回 chromiumapp.org
     let url;
@@ -215,61 +206,96 @@ class BaiduPanBackupManager {
   }
 
   _oauthViaPopup(authUrl, redirectUri) {
-    // 中继方案：popup 最终会跳转到 chromiumapp.org（非 RELAY_URL）
-    const extRedirect = this._getRedirectUri();
     return new Promise((resolve, reject) => {
+      console.log('[BaiduPan] Opening OAuth popup with URL:', authUrl);
+
       let popup;
+      let settled = false;
+      let timer;
+
+      const cleanup = () => {
+        if (timer) clearInterval(timer);
+        window.removeEventListener('message', onMessage);
+        if (timeoutId) clearTimeout(timeoutId);
+      };
+
+      const finish = (result) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        setTimeout(() => {
+          try { if (popup && !popup.closed) popup.close(); } catch {}
+        }, 1500);
+        resolve(result);
+      };
+
+      const fail = (err) => {
+        if (settled) return;
+        settled = true;
+        cleanup();
+        try { if (popup && !popup.closed) popup.close(); } catch {}
+        reject(err);
+      };
+
+      // 通过 postMessage 接收 oauth-callback.html 传回的 token
+      const onMessage = (event) => {
+        if (event.data && event.data.type === 'baidu-oauth-callback') {
+          console.log('[BaiduPan] Received token via postMessage');
+          const token = event.data.access_token;
+          const expiresIn = event.data.expires_in;
+          if (token) {
+            // 构造一个等效的响应 URL 供后续解析
+            const fakeUrl = 'https://localhost/?access_token=' + encodeURIComponent(token)
+              + '&expires_in=' + encodeURIComponent(expiresIn || '2592000');
+            finish(fakeUrl);
+          }
+        }
+      };
+      window.addEventListener('message', onMessage);
 
       try {
-        popup = window.open(authUrl, 'baidu-oauth', 'width=600,height=700');
+        const screenWidth = window.screen.width;
+        const screenHeight = window.screen.height;
+        const width = 600;
+        const height = 700;
+        const left = (screenWidth - width) / 2;
+        const top = (screenHeight - height) / 2;
+        const popupFeatures = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`;
+        popup = window.open(authUrl, 'baidu-oauth', popupFeatures);
+
         if (!popup) {
-          console.error('[BaiduPan] Failed to open OAuth popup window');
-          reject(new Error('AUTH_FAILED: Could not open authorization window'));
+          fail(new Error('AUTH_FAILED: Could not open authorization window, check popup blocker'));
           return;
         }
+        popup.focus();
       } catch (err) {
         console.error('[BaiduPan] Error opening OAuth popup:', err);
-        reject(new Error('AUTH_FAILED: Error opening authorization window'));
+        fail(new Error('AUTH_FAILED: Error opening authorization window'));
         return;
       }
 
-      const timer = setInterval(() => {
+      // 后备轮询：检测弹窗关闭或 URL fragment 中的 token
+      timer = setInterval(() => {
         try {
           if (popup.closed) {
-            clearInterval(timer);
-            console.log('[BaiduPan] OAuth popup was closed by user');
-            reject(new Error('AUTH_FAILED: User closed the authorization window'));
+            fail(new Error('AUTH_FAILED: User closed the authorization window'));
             return;
           }
+          // 尝试读取同源弹窗的 URL（postMessage 可能还未触发）
+          try {
+            const currentUrl = popup.location.href;
+            if (currentUrl.includes('access_token=')) {
+              console.log('[BaiduPan] Detected access_token in popup URL');
+              finish(currentUrl);
+            }
+          } catch {}
+        } catch {}
+      }, 1000);
 
-          const currentUrl = popup.location.href;
-          if (currentUrl.startsWith(extRedirect)) {
-            clearInterval(timer);
-            popup.close();
-            console.log('[BaiduPan] OAuth successful, received redirect URL');
-            resolve(currentUrl);
-          }
-        } catch (error) {
-          // 跨域时无法读取 popup.location，继续轮询
-          // Only log if it's not a cross-origin error
-          if (!error.message.includes('cross-origin') && !error.message.includes('CORS')) {
-            console.log('[BaiduPan] Cross-origin error during popup monitoring (expected)', error.message);
-          }
-        }
-      }, 500);
-
-      setTimeout(() => {
-        clearInterval(timer);
-        try {
-          if (popup && !popup.closed) {
-            popup.close();
-          }
-        } catch (e) {
-          console.warn('[BaiduPan] Error closing popup:', e);
-        }
-        console.warn('[BaiduPan] OAuth timeout after 5 minutes');
-        reject(new Error('AUTH_FAILED: Authorization timed out'));
-      }, 300000); // 5分钟超时
+      // 5分钟超时
+      const timeoutId = setTimeout(() => {
+        fail(new Error('AUTH_FAILED: Authorization timed out'));
+      }, 300000);
     });
   }
 

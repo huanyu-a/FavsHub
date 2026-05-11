@@ -13,14 +13,26 @@
   var expiresIn = params.get('expires_in');
 
   if (accessToken) {
-    // 从 URL 参数获取扩展 ID，构造 chromiumapp.org 回调地址
-    var extId = location.search.match(/ext_id=([^&]+)/);
-    if (extId) {
-      var callbackUrl = 'https://' + extId[1] + '.chromiumapp.org/?access_token=' + encodeURIComponent(accessToken);
-      if (expiresIn) callbackUrl += '&expires_in=' + encodeURIComponent(expiresIn);
-      window.location.replace(callbackUrl);
+    // 通过 postMessage 将 token 传回父窗口（扩展弹窗）
+    if (window.opener) {
+      window.opener.postMessage({
+        type: 'baidu-oauth-callback',
+        access_token: accessToken,
+        expires_in: expiresIn
+      }, '*');
+      document.body.innerText = '授权成功，正在返回扩展...';
+      // 延迟关闭窗口
+      setTimeout(function() { window.close(); }, 1500);
     } else {
-      document.body.innerText = '授权成功，请关闭此窗口返回扩展。';
+      // 如果没有 opener（非弹窗场景），回退到 chromiumapp.org
+      var extId = location.search.match(/ext_id=([^&]+)/);
+      if (extId) {
+        var callbackUrl = 'https://' + extId[1] + '.chromiumapp.org/?access_token=' + encodeURIComponent(accessToken);
+        if (expiresIn) callbackUrl += '&expires_in=' + encodeURIComponent(expiresIn);
+        window.location.replace(callbackUrl);
+      } else {
+        document.body.innerText = '授权成功，请关闭此窗口返回扩展。';
+      }
     }
   } else {
     document.body.innerText = '授权失败：未获取到 token。';
