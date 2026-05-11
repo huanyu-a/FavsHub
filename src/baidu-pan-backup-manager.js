@@ -141,8 +141,11 @@ class BaiduPanBackupManager {
   }
 
   async startOAuth() {
-    // 每次都强制执行完整的OAuth流程，而不是检查现有连接状态
-    // 先清除现有认证信息以确保弹出授权窗口
+    // 先撤销应用在百度侧的授权状态，这样重新授权时会展示授权页面
+    // 但不会影响用户的百度登录会话
+    await this._revokeAuthorization();
+
+    // 清除本地存储的 token
     await this.clearConfig();
 
     // 检查是否具有必要的权限
@@ -166,7 +169,6 @@ class BaiduPanBackupManager {
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('scope', 'basic,netdisk');
     authUrl.searchParams.set('display', 'popup');
-    authUrl.searchParams.set('force_login', '1');
 
     let responseUrl;
 
@@ -310,6 +312,24 @@ class BaiduPanBackupManager {
         fail(new Error('AUTH_FAILED: Authorization timed out'));
       }, 300000);
     });
+  }
+
+  // 撤销应用在百度侧的授权状态，使下次授权时能展示授权页面
+  // 不会影响用户的百度登录会话
+  async _revokeAuthorization() {
+    try {
+      const cfg = await this.getConfig();
+      if (!cfg.accessToken) return;
+
+      // 调用百度接口取消应用授权
+      const url = `https://openapi.baidu.com/rest/2.0/passport/auth/delLoginToken?access_token=${cfg.accessToken}`;
+      const resp = await fetch(url, { method: 'GET' });
+      const data = await resp.json();
+      console.log('[BaiduPan] Revoke authorization result:', data);
+    } catch (err) {
+      // 撤销失败不影响后续流程，继续发起新的授权
+      console.warn('[BaiduPan] Revoke authorization failed (non-blocking):', err.message);
+    }
   }
 
   async getValidToken() {
