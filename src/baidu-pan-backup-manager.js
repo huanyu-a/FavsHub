@@ -9,7 +9,6 @@
 // ── 应用凭据（百度开放平台注册） ──
 
 const APP_KEY = 'vk589M5xfVxbIjM80JZdxVPG2ye6ok6u';
-const APP_SECRET = 'w0RtiFzboAGJJFVLRSuokUeweDhsTPIx';
 const RELAY_URL = 'https://huanyu-a.github.io/FavsHub/src/oauth-callback.html';
 const REMOTE_DIR = '/apps/FavsHub';
 
@@ -142,40 +141,21 @@ class BaiduPanBackupManager {
   }
 
   async startOAuth() {
-    // 先撤销应用在百度侧的授权状态，这样重新授权时会展示授权页面
-    // 但不会影响用户的百度登录会话
-    await this._revokeAuthorization();
-
-    // 清除本地存储的 token
-    await this.clearConfig();
-
-    // 检查是否具有必要的权限
-    if (chrome.identity) {
-      console.log('[BaiduPan] Chrome Identity API is available');
-    } else {
-      console.warn('[BaiduPan] Chrome Identity API is not available, falling back to popup');
-    }
-
-    // Check if we're running an unpacked extension and log appropriately
-    if (this._isExtensionUnpacked()) {
-      console.log('[BaiduPan] Extension is running unpacked, may affect OAuth flow');
-    }
-
     // 中继页面地址（GitHub Pages），授权后百度会重定向到此页面
     const extId = chrome.runtime.id;
     const redirectUri = RELAY_URL + '?ext_id=' + encodeURIComponent(extId);
     const authUrl = new URL('https://openapi.baidu.com/oauth/2.0/authorize');
-    // 使用授权码模式，每次都会展示授权页面
-    authUrl.searchParams.set('response_type', 'code');
+    // 使用简化模式，无需 SecretKey，适用于无 server 端的应用
+    authUrl.searchParams.set('response_type', 'token');
     authUrl.searchParams.set('client_id', APP_KEY);
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('scope', 'basic,netdisk');
     authUrl.searchParams.set('display', 'popup');
 
-    console.log('[BaiduPan] Using popup method for authorization code flow');
+    console.log('[BaiduPan] Using popup method for implicit grant flow');
     const responseUrl = await this._oauthViaPopup(authUrl.toString(), redirectUri);
 
-    // 从回调 URL 中解析授权码
+    // 从回调 URL 中解析 access_token（简化模式 token 在 fragment 中，经 oauth-callback.html 转发后在 search params 中）
     let url;
     try {
       url = new URL(responseUrl);
@@ -184,24 +164,20 @@ class BaiduPanBackupManager {
       throw new Error('AUTH_FAILED: Invalid response URL');
     }
 
-    const code = url.searchParams.get('code');
-    if (!code) {
-      console.error('[BaiduPan] No authorization code found in response URL:', url.toString());
-      throw new Error('AUTH_FAILED: No authorization code received');
+    const accessToken = url.searchParams.get('access_token');
+    const expiresIn = parseInt(url.searchParams.get('expires_in'), 10);
+
+    if (!accessToken) {
+      console.error('[BaiduPan] No access_token found in response URL:', url.toString());
+      throw new Error('AUTH_FAILED: No access token received');
     }
 
-    console.log('[BaiduPan] Got authorization code, exchanging for access token...');
-
-    // 用授权码换取 access_token
-    const tokenData = await this._exchangeCodeForToken(code, redirectUri);
-
     await this.setConfig({
-      accessToken: tokenData.access_token,
-      refreshToken: tokenData.refresh_token,
-      expiresAt: Date.now() + (tokenData.expires_in || 2592000) * 1000
+      accessToken,
+      expiresAt: Date.now() + (expiresIn || 2592000) * 1000
     });
 
-    console.log('[BaiduPan] Successfully obtained access token, expires at:', new Date(Date.now() + (tokenData.expires_in || 2592000) * 1000));
+    console.log('[BaiduPan] Successfully obtained access token, expires at:', new Date(Date.now() + (expiresIn || 2592000) * 1000));
   }
 
   _oauthViaPopup(authUrl, redirectUri) {
@@ -318,39 +294,6 @@ class BaiduPanBackupManager {
         fail(new Error('AUTH_FAILED: Authorization timed out'));
       }, 300000);
     });
-  }
-
-  // 撤销应用在百度侧的授权状态，使下次授权时能展示授权页面
-  // 不会影响用户的百度登录会话
-  async _revokeAuthorization() {
-    try {
-      const cfg = await this.getConfig();
-      if (!cfg.accessToken) return;
-
-      // 调用百度接口取消应用授权
-      const url = `https://openapi.baidu.com/rest/2.0/passport/auth/delLoginToken?access_token=${cfg.accessToken}`;
-      const resp = await fetch(url, { method: 'GET' });
-      const data = await resp.json();
-      console.log('[BaiduPan] Revoke authorization result:', data);
-    } catch (err) {
-      // 撤销失败不影响后续流程，继续发起新的授权
-      console.warn('[BaiduPan] Revoke authorization failed (non-blocking):', err.message);
-    }
-  }
-
-  async _exchangeCodeForToken(code, redirectUri) {
-    const url = `https://openapi.baidu.com/oauth/2.0/token?grant_type=authorization_code&code=${encodeURIComponent(code)}&client_id=${APP_KEY}&client_secret=${APP_SECRET}&redirect_uri=${encodeURIComponent(redirectUri)}`;
-    console.log('[BaiduPan] Exchanging code for token...');
-    const resp = await fetch(url);
-    const data = await resp.json();
-    console.log('[BaiduPan] Token exchange response:', data);
-
-    if (!data.access_token) {
-      console.error('[BaiduPan] Token exchange failed:', data);
-      throw new Error('AUTH_FAILED: Failed to exchange code for token');
-    }
-
-    return data;
   }
 
   async getValidToken() {
