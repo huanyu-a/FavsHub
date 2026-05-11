@@ -274,13 +274,30 @@ class BaiduPanBackupManager {
         return;
       }
 
-      // 后备轮询：检测弹窗关闭或 URL fragment 中的 token
+      // 后备轮询：检测弹窗关闭、URL fragment、localStorage
       timer = setInterval(() => {
         try {
           if (popup.closed) {
             fail(new Error('AUTH_FAILED: User closed the authorization window'));
             return;
           }
+
+          // 优先检查 localStorage（oauth-callback.html 写入）
+          try {
+            const stored = localStorage.getItem('baidu_pan_oauth_result');
+            if (stored) {
+              const data = JSON.parse(stored);
+              localStorage.removeItem('baidu_pan_oauth_result');
+              if (data.access_token && (Date.now() - data.timestamp < 60000)) {
+                console.log('[BaiduPan] Received token via localStorage');
+                const fakeUrl = 'https://localhost/?access_token=' + encodeURIComponent(data.access_token)
+                  + '&expires_in=' + encodeURIComponent(data.expires_in || '2592000');
+                finish(fakeUrl);
+                return;
+              }
+            }
+          } catch {}
+
           // 尝试读取同源弹窗的 URL（postMessage 可能还未触发）
           try {
             const currentUrl = popup.location.href;

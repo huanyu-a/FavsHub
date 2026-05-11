@@ -13,27 +13,29 @@
   var expiresIn = params.get('expires_in');
 
   if (accessToken) {
-    // 通过 postMessage 将 token 传回父窗口（扩展弹窗）
-    if (window.opener) {
-      window.opener.postMessage({
-        type: 'baidu-oauth-callback',
-        access_token: accessToken,
-        expires_in: expiresIn
-      }, '*');
-      document.body.innerText = '授权成功，正在返回扩展...';
-      // 延迟关闭窗口
-      setTimeout(function() { window.close(); }, 1500);
-    } else {
-      // 如果没有 opener（非弹窗场景），回退到 chromiumapp.org
-      var extId = location.search.match(/ext_id=([^&]+)/);
-      if (extId) {
-        var callbackUrl = 'https://' + extId[1] + '.chromiumapp.org/?access_token=' + encodeURIComponent(accessToken);
-        if (expiresIn) callbackUrl += '&expires_in=' + encodeURIComponent(expiresIn);
-        window.location.replace(callbackUrl);
-      } else {
-        document.body.innerText = '授权成功，请关闭此窗口返回扩展。';
+    // 写入 localStorage，供扩展弹窗轮询读取
+    var payload = JSON.stringify({
+      access_token: accessToken,
+      expires_in: expiresIn,
+      timestamp: Date.now()
+    });
+    try {
+      localStorage.setItem('baidu_pan_oauth_result', payload);
+    } catch(e) {}
+
+    // 同时尝试 postMessage（兼容旧方案）
+    try {
+      if (window.opener && !window.opener.closed) {
+        window.opener.postMessage({
+          type: 'baidu-oauth-callback',
+          access_token: accessToken,
+          expires_in: expiresIn
+        }, '*');
       }
-    }
+    } catch(e) {}
+
+    document.body.innerText = '授权成功，正在返回扩展...';
+    setTimeout(function() { window.close(); }, 1500);
   } else {
     document.body.innerText = '授权失败：未获取到 token。';
   }
