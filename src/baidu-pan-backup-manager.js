@@ -128,32 +128,18 @@ class BaiduPanBackupManager {
 
   // ── OAuth 流程（简化模式） ──
 
-  _isExtensionUnpacked() {
-    return chrome.runtime.id.length !== 32; // Unpacked extensions have human-readable IDs
-  }
-
-  _getRedirectUri() {
-    if (chrome.identity?.getRedirectURL) {
-      return chrome.identity.getRedirectURL();
-    }
-    // 如果没有chrome.identity权限，则直接返回基于runtime.id的URL
-    return `https://${chrome.runtime.id}.chromiumapp.org/`;
-  }
-
   async startOAuth() {
-    // 中继页面地址（GitHub Pages），授权后百度会重定向到此页面
     const extId = chrome.runtime.id;
     const redirectUri = RELAY_URL + '?ext_id=' + encodeURIComponent(extId);
     const authUrl = new URL('https://openapi.baidu.com/oauth/2.0/authorize');
-    // 使用简化模式，无需 SecretKey，适用于无 server 端的应用
     authUrl.searchParams.set('response_type', 'token');
     authUrl.searchParams.set('client_id', APP_KEY);
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('scope', 'basic,netdisk');
     authUrl.searchParams.set('display', 'popup');
 
-    console.log('[BaiduPan] Using popup method for implicit grant flow');
-    const responseUrl = await this._oauthViaPopup(authUrl.toString(), redirectUri);
+    console.log('[BaiduPan] Starting OAuth popup...');
+    const responseUrl = await this._oauthViaPopup(authUrl.toString());
 
     // 从回调 URL 中解析 access_token（简化模式 token 在 fragment 中，经 oauth-callback.html 转发后在 search params 中）
     let url;
@@ -180,7 +166,7 @@ class BaiduPanBackupManager {
     console.log('[BaiduPan] Successfully obtained access token, expires at:', new Date(Date.now() + (expiresIn || 2592000) * 1000));
   }
 
-  _oauthViaPopup(authUrl, redirectUri) {
+  _oauthViaPopup(authUrl) {
     return new Promise((resolve, reject) => {
       console.log('[BaiduPan] Opening OAuth popup with URL:', authUrl);
 
@@ -212,17 +198,12 @@ class BaiduPanBackupManager {
         reject(err);
       };
 
-      // 通过 postMessage 接收 oauth-callback.html 传回的 code 或 token
+      // 通过 postMessage 接收 oauth-callback.html 传回的 token
       const onMessage = (event) => {
-        if (event.data && event.data.type === 'baidu-oauth-callback') {
-          if (event.data.code) {
-            console.log('[BaiduPan] Received authorization code via postMessage');
-            finish('https://localhost/?code=' + encodeURIComponent(event.data.code));
-          } else if (event.data.access_token) {
-            console.log('[BaiduPan] Received access_token via postMessage');
-            finish('https://localhost/?access_token=' + encodeURIComponent(event.data.access_token)
-              + '&expires_in=' + encodeURIComponent(event.data.expires_in || '2592000'));
-          }
+        if (event.data && event.data.type === 'baidu-oauth-callback' && event.data.access_token) {
+          console.log('[BaiduPan] Received access_token via postMessage');
+          finish('https://localhost/?access_token=' + encodeURIComponent(event.data.access_token)
+            + '&expires_in=' + encodeURIComponent(event.data.expires_in || '2592000'));
         }
       };
       window.addEventListener('message', onMessage);
@@ -234,8 +215,7 @@ class BaiduPanBackupManager {
         const height = 700;
         const left = (screenWidth - width) / 2;
         const top = (screenHeight - height) / 2;
-        const popupFeatures = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`;
-        popup = window.open(authUrl, 'baidu-oauth', popupFeatures);
+        popup = window.open(authUrl, 'baidu-oauth', `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes`);
 
         if (!popup) {
           fail(new Error('AUTH_FAILED: Could not open authorization window, check popup blocker'));
@@ -248,7 +228,7 @@ class BaiduPanBackupManager {
         return;
       }
 
-      // 后备轮询：检测弹窗关闭、URL fragment、localStorage
+      // 后备轮询：检测弹窗关闭、localStorage
       timer = setInterval(() => {
         try {
           if (popup.closed) {
@@ -256,34 +236,18 @@ class BaiduPanBackupManager {
             return;
           }
 
-          // 优先检查 localStorage（oauth-callback.html 写入）
+          // 检查 localStorage（oauth-callback.html 写入）
           try {
             const stored = localStorage.getItem('baidu_pan_oauth_result');
             if (stored) {
               const data = JSON.parse(stored);
               localStorage.removeItem('baidu_pan_oauth_result');
-              if (Date.now() - data.timestamp < 60000) {
-                if (data.code) {
-                  console.log('[BaiduPan] Received authorization code via localStorage');
-                  finish('https://localhost/?code=' + encodeURIComponent(data.code));
-                  return;
-                }
-                if (data.access_token) {
-                  console.log('[BaiduPan] Received token via localStorage');
-                  finish('https://localhost/?access_token=' + encodeURIComponent(data.access_token)
-                    + '&expires_in=' + encodeURIComponent(data.expires_in || '2592000'));
-                  return;
-                }
+              if (data.access_token && Date.now() - data.timestamp < 60000) {
+                console.log('[BaiduPan] Received token via localStorage');
+                finish('https://localhost/?access_token=' + encodeURIComponent(data.access_token)
+                  + '&expires_in=' + encodeURIComponent(data.expires_in || '2592000'));
+                return;
               }
-            }
-          } catch {}
-
-          // 尝试读取同源弹窗的 URL（postMessage 可能还未触发）
-          try {
-            const currentUrl = popup.location.href;
-            if (currentUrl.includes('code=') || currentUrl.includes('access_token=')) {
-              console.log('[BaiduPan] Detected token/code in popup URL');
-              finish(currentUrl);
             }
           } catch {}
         } catch {}
@@ -309,15 +273,6 @@ class BaiduPanBackupManager {
 
   async disconnect() {
     await this.clearConfig();
-    console.log('[BaiduPan] Disconnected and cleared stored credentials');
-  }
-
-  // Added a method to force refresh the token
-  async refreshConnection() {
-    // Disconnect first
-    await this.disconnect();
-    // Then initiate a new OAuth flow
-    await this.startOAuth();
   }
 
   // ── 百度网盘 API ──
