@@ -169,6 +169,7 @@ class BaiduPanBackupManager {
     authUrl.searchParams.set('redirect_uri', redirectUri);
     authUrl.searchParams.set('scope', 'basic,netdisk');
     authUrl.searchParams.set('display', 'popup');
+    authUrl.searchParams.set('state', Math.random().toString(36).substring(2, 15) + Date.now());
 
     let responseUrl;
 
