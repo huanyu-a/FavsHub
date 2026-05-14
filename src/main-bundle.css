@@ -3621,7 +3621,7 @@ input:checked+.slider:before {
   }
 
   /* ??�置侧边??�容?��?��???*/
-  #sidebar-container {
+  #sidebar-container.has-sidebar-toggle {
     width: 100% !important;
     margin-left: 0 !important;
     transition: none !important;
@@ -6494,7 +6494,7 @@ body.is-sorting-bookmarks .card:hover {
 /* ???�? Side Panel ????��定样�?*/
 @media (max-width: 480px) {
   /* �??��侧边??�宽�?*/
-  #sidebar-container {
+  #sidebar-container.has-sidebar-toggle {
     width: 100%;
   }
 

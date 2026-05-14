@@ -26,16 +26,19 @@
             display: flex;
             background: var(--bg-primary, #f8fafc);
             color: var(--text-primary, #1e293b);
+            width: 100vw;
+            overflow: hidden;
         }
         #sidebar-container {
             display: flex;
-            flex-shrink: 0;
+            width: auto !important;
         }
         aside.sidebar {
             width: 18rem;
             min-width: 18rem;
             padding: 1rem;
-            overflow: hidden;
+            overflow-y: auto;
+            overflow-x: hidden;
             border-right: 1px solid rgba(15, 23, 42, 0.06);
             display: flex;
             flex-direction: column;
@@ -48,13 +51,16 @@
             display: flex;
             flex-direction: column;
             min-width: 0;
+            min-height: 0 !important;
+            max-height: 100vh;
+            padding: 0 !important;
             overflow-y: auto;
             overflow-x: hidden;
-            scrollbar-width: none; /* Firefox */
-            -ms-overflow-style: none; /* IE/Edge */
+            scrollbar-width: none;
+            -ms-overflow-style: none;
         }
         .main-content::-webkit-scrollbar {
-            display: none; /* Chrome/Safari */
+            display: none;
         }
 
         /* ========== 侧边栏 ========== */
@@ -387,12 +393,14 @@
         .main-toolbar {
             display: flex;
             align-items: center;
+            flex-wrap: wrap;
             gap: 0.65rem;
             margin-bottom: 1rem;
         }
         .search-box {
-            width: 360px;
-            flex-shrink: 0;
+            flex: 1;
+            min-width: 0;
+            max-width: 360px;
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -475,6 +483,10 @@
         .prompts-container {
             flex: 1;
             min-height: 0;
+            min-width: 0;
+        }
+        .prompts-grid {
+            grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)) !important;
         }
 
         /* ========== 模态框修复 ========== */
@@ -492,8 +504,12 @@
             left: auto !important;
             transform: none !important;
             width: 100% !important;
-            max-width: 900px !important;
+            max-width: min(900px, calc(100vw - 2rem)) !important;
             margin: 0 auto !important;
+            box-sizing: border-box;
+        }
+        .modal .modal-content.modal-xlarge {
+            max-width: min(1100px, calc(100vw - 2rem)) !important;
         }
         #promptModal .modal-content {
             position: relative !important;
@@ -623,6 +639,35 @@
         [data-theme="dark"] #back-to-top::before { border-color: #444 !important; }
         [data-theme="dark"] #back-to-top svg { stroke: #e0e0e0 !important; }
         [data-theme="dark"] #scroll-percent { color: #e0e0e0 !important; }
+
+        /* ========== 响应式布局 ========== */
+        @media (max-width: 1200px) {
+            .main-area {
+                padding: 1.25rem 1.25rem;
+            }
+        }
+        @media (max-width: 768px) {
+            #sidebar-container {
+                flex-direction: column;
+                width: 100% !important;
+            }
+            aside.sidebar {
+                width: 100% !important;
+                min-width: 0 !important;
+                border-right: none;
+                border-bottom: 1px solid rgba(15, 23, 42, 0.06);
+                max-height: 40vh;
+            }
+            .main-content {
+                width: 100vw !important;
+            }
+            .main-area {
+                padding: 1rem;
+            }
+            .search-box {
+                max-width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
