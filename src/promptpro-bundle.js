@@ -843,7 +843,7 @@ window.PromptProDB = PromptProDB;
     dropdown.innerHTML = html;
     dropdown.querySelectorAll('.custom-select-option').forEach(option => {
       option.addEventListener('click', () => {
-        const value = option.dataset.value, text = option.textContent.trim();
+        const value = option.dataset.value, text = getOptionText(option);
         const trigger = document.querySelector('#folderSelect .custom-select-trigger');
         const hiddenInput = document.getElementById('formFolder');
         dropdown.querySelectorAll('.custom-select-option').forEach(opt => opt.classList.remove('selected'));
@@ -870,7 +870,7 @@ window.PromptProDB = PromptProDB;
         if (trigger && selectedOption) { 
           const selectedText = trigger.querySelector('.selected-text'); 
           if (selectedText) { 
-            selectedText.textContent = selectedOption.textContent.trim(); 
+            selectedText.textContent = getOptionText(selectedOption); 
             selectedText.classList.remove('placeholder'); 
           } 
           selectedOption.classList.add('selected'); 
@@ -918,6 +918,12 @@ window.PromptProDB = PromptProDB;
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); const value = input.value.trim(); if (value) { addFormTag(value); input.value = ''; renderTagSuggestions(); } } });
   }
 
+  function getOptionText(option) {
+    let text = '';
+    option.childNodes.forEach(n => { if (n.nodeType === 3) text += n.textContent; });
+    return text.trim();
+  }
+
   function initCustomSelects() {
     document.querySelectorAll('.custom-select').forEach(selectEl => {
       const trigger = selectEl.querySelector('.custom-select-trigger');
@@ -930,7 +936,7 @@ window.PromptProDB = PromptProDB;
       });
       dropdown.querySelectorAll('.custom-select-option').forEach(option => {
         option.addEventListener('click', () => {
-          const value = option.dataset.value, text = option.textContent;
+          const value = option.dataset.value, text = getOptionText(option);
           dropdown.querySelectorAll('.custom-select-option').forEach(opt => opt.classList.remove('selected'));
           option.classList.add('selected');
           const selectedText = trigger.querySelector('.selected-text');

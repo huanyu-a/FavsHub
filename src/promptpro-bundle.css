@@ -1069,13 +1069,13 @@ body {
 }
 
 .custom-select-option.selected::before {
-    content: '?';
+    content: '✓';
     font-weight: 700;
     font-size: 14px;
     color: var(--primary-color);
 }
 
-/* 文件夹图?�� ��?*/
+/* 文件夹图标 */
 .custom-select-option .folder-icon {
     color: var(--text-secondary);
     transition: color 0.2s;
@@ -1624,7 +1624,7 @@ body {
 }
 
 .custom-select-option.selected::before {
-    content: '�?;
+    content: '✓';
     font-weight: 700;
     font-size: 14px;
 }
